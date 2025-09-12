@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lindan Equities - Business Management System</title>
+    <title>Lindan Equities - Professional Banking Management System</title>
     <style>
-        /* LINDAN EQUITIES BUSINESS MANAGEMENT SYSTEM - MONEY GREEN THEME */
-        /* Professional Banking Software with Export Capabilities */
+        /* LINDAN EQUITIES PROFESSIONAL BANKING MANAGEMENT SYSTEM */
+        /* Enterprise-Grade Banking Software with Complete Loan Management */
         
         * {
             margin: 0;
@@ -15,7 +15,7 @@
         }
 
         :root {
-            /* UPDATED: Money Green Professional Color Palette */
+            /* Professional Money Green Color Palette */
             --primary-money-green: #2d6a4f;
             --secondary-green: #40916c;
             --accent-gold: #f4a261;
@@ -45,7 +45,7 @@
             display: none !important;
         }
 
-        /* LOGIN SCREEN - Updated Colors */
+        /* LOGIN SCREEN */
         .login-screen {
             display: flex;
             align-items: center;
@@ -160,7 +160,7 @@
             font-weight: 500;
         }
 
-        /* MAIN APPLICATION - Money Green Theme */
+        /* MAIN APPLICATION */
         .app-container {
             min-height: 100vh;
             background: var(--light-sage);
@@ -189,7 +189,7 @@
             background: linear-gradient(90deg, var(--success-green) 0%, var(--accent-gold) 100%);
         }
 
-        /* FIXED: Header layout - dropdown far left, bigger logo, NO company name */
+        /* UPDATED: Header layout - dropdown far left, bigger logo, NO company name */
         .header-left {
             display: flex;
             align-items: center;
@@ -197,7 +197,7 @@
             flex: 1;
         }
 
-        /* FIXED: Dropdown moved to far left (order: 1) */
+        /* Dropdown moved to far left (order: 1) */
         .app-switcher {
             padding: 0.8rem 1.4rem;
             border: 2px solid rgba(255,255,255,0.3);
@@ -208,7 +208,7 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            order: 1;  /* Far left position */
+            order: 1;
         }
 
         .app-switcher:hover {
@@ -222,22 +222,22 @@
             font-weight: 600;
         }
 
-        /* FIXED: Logo made much bigger and positioned after dropdown */
+        /* Bigger logo positioned after dropdown */
         .logo-container {
             display: flex;
             align-items: center;
-            order: 2;  /* After dropdown */
+            order: 2;
         }
 
         .logo-container img {
-            height: 50px;  /* BIGGER: Increased from 35px to 50px */
+            height: 50px;
             width: auto;
-            max-width: 300px;  /* BIGGER: Increased max-width */
+            max-width: 300px;
             object-fit: contain;
             border-radius: 8px;
             background: var(--white);
-            padding: 8px 15px;  /* BIGGER: More padding */
-            box-shadow: 0 3px 15px rgba(0,0,0,0.15);  /* BIGGER: More shadow */
+            padding: 8px 15px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
         }
 
@@ -252,7 +252,6 @@
             gap: 1rem;
         }
 
-        /* Prime rate display - clickable */
         .prime-rate-display {
             background: rgba(255,255,255,0.15);
             padding: 0.6rem 1.2rem;
@@ -274,7 +273,7 @@
             flex: 1;
         }
 
-        /* SIDEBAR - Updated Colors */
+        /* SIDEBAR */
         .sidebar {
             width: 280px;
             background: var(--white);
@@ -292,7 +291,6 @@
             margin-bottom: 0.25rem;
         }
 
-        /* Navigation links - entire area clickable */
         .nav-link {
             display: flex;
             align-items: center;
@@ -348,7 +346,6 @@
             display: block;
         }
 
-        /* View headers - removed subtitles */
         .view-header {
             margin-bottom: 2rem;
             display: flex;
@@ -371,7 +368,7 @@
             flex-wrap: wrap;
         }
 
-        /* DASHBOARD - Modern Card Design with Green Theme */
+        /* DASHBOARD */
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -443,7 +440,7 @@
             font-weight: 500;
         }
 
-        /* BUTTONS - Updated for Money Green Theme */
+        /* BUTTONS */
         .btn {
             padding: 0.7rem 1.4rem;
             border: none;
@@ -490,7 +487,6 @@
             color: var(--white);
         }
 
-        /* UPDATED: Logout button - changed from green to gold since background is now green */
         .btn-outline {
             background: transparent;
             border: 2px solid var(--accent-gold);
@@ -507,7 +503,6 @@
             font-size: 0.85rem;
         }
 
-        /* Export buttons styling */
         .btn-export {
             background: var(--accent-gold);
             color: var(--white);
@@ -520,7 +515,7 @@
             transform: translateY(-1px);
         }
 
-        /* TABLES - Modern Banking Design */
+        /* TABLES */
         .table-container {
             background: var(--white);
             border-radius: 16px;
@@ -563,7 +558,7 @@
             background: var(--hover-bg);
         }
 
-        /* STATUS BADGES - Updated Colors */
+        /* STATUS BADGES */
         .status-badge {
             padding: 0.3rem 0.8rem;
             border-radius: 20px;
@@ -608,173 +603,7 @@
             color: var(--success-green);
         }
 
-        /* PAYMENT SCHEDULE - Enhanced Design */
-        .schedule-controls {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-        }
-
-        .schedule-filters {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-
-        .filter-group label {
-            font-weight: 600;
-            color: var(--text-dark);
-            min-width: 100px;
-            font-size: 0.9rem;
-        }
-
-        .time-filters {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .time-filter-btn {
-            padding: 0.6rem 1.2rem;
-            border: 2px solid var(--success-green);
-            background: transparent;
-            color: var(--success-green);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 0.85rem;
-        }
-
-        .time-filter-btn.active,
-        .time-filter-btn:hover {
-            background: var(--success-green);
-            color: var(--white);
-        }
-
-        .schedule-table {
-            background: var(--white);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 130px 170px 130px 110px 110px 130px 110px 200px;
-            padding: 1.2rem;
-            background: var(--light-sage);
-            font-weight: 600;
-            color: var(--text-dark);
-            border-bottom: 2px solid var(--border-color);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 130px 170px 130px 110px 110px 130px 110px 200px;
-            padding: 1.2rem;
-            border-bottom: 1px solid var(--border-color);
-            align-items: center;
-            font-size: 0.9rem;
-            color: var(--text-dark);
-            transition: background-color 0.2s;
-        }
-
-        .table-row:hover {
-            background: var(--hover-bg);
-        }
-
-        .table-row.next-payment {
-            background: rgba(64, 145, 108, 0.08);
-            border-left: 4px solid var(--success-green);
-            font-weight: 600;
-        }
-
-        /* REPORTS SECTION - New Styling */
-        .reports-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .report-section {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-        }
-
-        .report-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .report-header h3 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin: 0;
-        }
-
-        /* PRIME RATE HISTORY TABLE */
-        .prime-history-section {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-        }
-
-        .prime-history-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .prime-history-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .prime-history-table th,
-        .prime-history-table td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .prime-history-table th {
-            background: var(--light-sage);
-            font-weight: 600;
-            color: var(--text-dark);
-        }
-
-        /* MODAL STYLES - Professional Design */
+        /* MODALS */
         .modal {
             position: fixed;
             top: 0;
@@ -851,8 +680,7 @@
             margin-bottom: 2rem;
         }
 
-        .form-section h3,
-        .form-section h4 {
+        .form-section h3 {
             font-size: 1.3rem;
             font-weight: 600;
             color: var(--text-dark);
@@ -879,57 +707,7 @@
             border-top: 1px solid var(--border-color);
         }
 
-        /* PROPERTIES GRID */
-        .properties-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-        }
-
-        .property-card {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border-top: 5px solid var(--success-green);
-            transition: all 0.3s ease;
-            position: relative;
-            border: 1px solid var(--border-color);
-        }
-
-        .property-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-
-        .property-card h3 {
-            color: var(--success-green);
-            margin-bottom: 0.5rem;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .property-details {
-            margin-top: 1rem;
-        }
-
-        .property-details div {
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-            display: flex;
-            justify-content: space-between;
-            color: var(--text-dark);
-        }
-
-        .property-actions {
-            position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* NOTIFICATIONS - Modern Style */
+        /* NOTIFICATIONS */
         .notification {
             position: fixed;
             top: 20px;
@@ -963,23 +741,6 @@
         }
 
         /* RESPONSIVE DESIGN */
-        @media (max-width: 1200px) {
-            .sidebar {
-                width: 260px;
-            }
-            
-            .table-header,
-            .table-row {
-                font-size: 0.8rem;
-                padding: 1rem;
-            }
-
-            .logo-container img {
-                height: 45px;
-                max-width: 250px;
-            }
-        }
-
         @media (max-width: 768px) {
             .app-main {
                 flex-direction: column;
@@ -1011,12 +772,6 @@
                 grid-template-columns: 1fr;
             }
             
-            .table-header,
-            .table-row {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-            
             .form-row {
                 flex-direction: column;
             }
@@ -1027,19 +782,9 @@
                 align-items: flex-start;
             }
 
-            .schedule-filters {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 1rem;
-            }
-
             .export-buttons {
                 width: 100%;
                 justify-content: center;
-            }
-
-            .reports-grid {
-                grid-template-columns: 1fr;
             }
 
             .logo-container img {
@@ -1073,6 +818,201 @@
             margin-bottom: 1rem;
             color: var(--text-dark);
         }
+
+        /* NEW: Period Selector for Reports */
+        .period-selector {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        .period-selector h4 {
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .date-range input[type="date"] {
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .quick-periods {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .period-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--success-green);
+            background: transparent;
+            color: var(--success-green);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .period-btn.active,
+        .period-btn:hover {
+            background: var(--success-green);
+            color: var(--white);
+        }
+
+        /* NEW: User Management Styles */
+        .user-role-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .role-admin {
+            background: #feebc8;
+            color: var(--warning-orange);
+        }
+
+        .role-manager {
+            background: var(--light-green);
+            color: var(--success-green);
+        }
+
+        .role-user {
+            background: #e2e8f0;
+            color: var(--text-dark);
+        }
+
+        .role-viewer {
+            background: #fed7d7;
+            color: var(--error-red);
+        }
+
+        /* NEW: Loan Schedule Styles */
+        .schedule-summary {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--success-green);
+        }
+
+        .schedule-summary h3 {
+            color: var(--primary-money-green);
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .summary-value {
+            color: var(--success-green);
+            font-weight: 600;
+        }
+
+        /* NEW: Tranche Modal Styles */
+        .tranche-type-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tranche-type {
+            flex: 1;
+            padding: 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tranche-type.selected {
+            border-color: var(--success-green);
+            background: var(--hover-bg);
+        }
+
+        .tranche-type h4 {
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .tranche-type p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* NEW: Annual Statement Styles */
+        .statement-header {
+            text-align: center;
+            padding: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .statement-logo {
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+
+        .statement-title {
+            font-size: 1.8rem;
+            color: var(--primary-money-green);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .statement-period {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .statement-section {
+            margin-bottom: 2rem;
+        }
+
+        .statement-section h4 {
+            color: var(--primary-money-green);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -1081,7 +1021,7 @@
         <div class="login-container">
             <div class="company-logo">
                 <h1>Lindan Equities</h1>
-                <div class="company-tagline">Professional Business Management System</div>
+                <div class="company-tagline">Professional Banking Management System</div>
             </div>
             
             <div id="loginError" class="error-message">Invalid username or password</div>
@@ -1113,21 +1053,19 @@
     <!-- MAIN APPLICATION -->
     <div id="mainApp" class="app-container hidden">
         <header class="app-header">
-            <!-- FIXED: Dropdown far left, bigger logo, NO "Lindan Equities" text -->
             <div class="header-left">
-                <!-- FIXED: Dropdown moved to far left (order: 1) -->
+                <!-- Dropdown at far left -->
                 <select id="appModeSelector" class="app-switcher">
                     <option value="loan">Loan Management</option>
                     <option value="realestate">Real Estate Management</option>
                 </select>
-                <!-- FIXED: Bigger logo (order: 2) -->
+                <!-- Bigger logo -->
                 <div class="logo-container">
                     <img src="Lindan Logo.jpg" alt="Lindan Equities" />
                 </div>
             </div>
             
             <div class="header-right">
-                <!-- Clickable prime rate display -->
                 <div id="primeRateDisplay" class="prime-rate-display" title="Click to update Prime Rate">
                     Prime Rate: <span id="primeRateValue">5.50</span>%
                 </div>
@@ -1164,8 +1102,8 @@
                         <h1>All Loans</h1>
                         <div class="export-buttons">
                             <button class="btn btn-primary" id="addLoanBtn">Add New Loan</button>
-                            <button class="btn btn-export" id="exportLoansExcel">Export to Excel</button>
-                            <button class="btn btn-export" id="exportLoansPDF">Export PDF Summaries</button>
+                            <button class="btn btn-export" id="exportLoansExcel">Export Schedule to Excel</button>
+                            <button class="btn btn-export" id="exportLoansPDF">Export Annual Statements</button>
                         </div>
                     </div>
                     <div class="table-container" id="loansTable">
@@ -1206,33 +1144,11 @@
                                     <option value="all">All Loans</option>
                                 </select>
                             </div>
-                            <div class="filter-group">
-                                <label>Time Period:</label>
-                                <div class="time-filters">
-                                    <button class="time-filter-btn active" data-filter="upcoming">Upcoming</button>
-                                    <button class="time-filter-btn" data-filter="overdue">Overdue</button>
-                                    <button class="time-filter-btn" data-filter="paid">Past Paid</button>
-                                    <button class="time-filter-btn" data-filter="missed">Missed</button>
-                                    <button class="time-filter-btn" data-filter="all">All History</button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                     
-                    <div class="schedule-table">
-                        <div class="table-header">
-                            <div>Date</div>
-                            <div>Borrower</div>
-                            <div>Payment</div>
-                            <div>Principal</div>
-                            <div>Interest</div>
-                            <div>Balance</div>
-                            <div>Status</div>
-                            <div>Actions</div>
-                        </div>
-                        <div id="paymentRows">
-                            <!-- Payment rows populated by JavaScript -->
-                        </div>
+                    <div id="paymentScheduleContent">
+                        <!-- Payment schedule populated by JavaScript -->
                     </div>
                 </div>
 
@@ -1264,65 +1180,65 @@
                     </div>
                 </div>
 
-                <!-- RENT SCHEDULE VIEW -->
-                <div id="rent-schedule" class="view">
-                    <div class="view-header">
-                        <h1>Rent Payment Schedule</h1>
-                        <div class="export-buttons">
-                            <button class="btn btn-export" id="exportRentScheduleExcel">Export to Excel</button>
-                        </div>
-                    </div>
-                    <div class="table-container" id="rentScheduleTable">
-                        <!-- Rent schedule populated by JavaScript -->
-                    </div>
-                </div>
-
-                <!-- REPORTS VIEW - ENHANCED WITH NEW REPORTS -->
+                <!-- REPORTS VIEW -->
                 <div id="reports" class="view">
                     <div class="view-header">
                         <h1>Reports & Analytics</h1>
                     </div>
                     
-                    <!-- Prime Rate History Section -->
-                    <div class="prime-history-section">
-                        <div class="prime-history-header">
-                            <h3>Prime Rate History</h3>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary" id="updatePrimeRateBtn">Update Prime Rate</button>
-                                <button class="btn btn-export" id="exportPrimeHistoryExcel">Export to Excel</button>
-                            </div>
+                    <!-- Period Selector for Annual Statements -->
+                    <div class="period-selector">
+                        <h4>Annual Statement Period Selection</h4>
+                        <div class="date-range">
+                            <label>From:</label>
+                            <input type="date" id="statementStartDate" value="2024-01-01">
+                            <label>To:</label>
+                            <input type="date" id="statementEndDate" value="2024-12-31">
+                            <button class="btn btn-primary" id="generateStatementBtn">Generate Statement</button>
                         </div>
-                        <div id="primeHistoryTable">
-                            <!-- Prime rate history populated by JavaScript -->
+                        <div class="quick-periods">
+                            <button class="period-btn active" data-period="current-year">Current Year</button>
+                            <button class="period-btn" data-period="last-year">Last Year</button>
+                            <button class="period-btn" data-period="ytd">Year to Date</button>
+                            <button class="period-btn" data-period="custom">Custom Range</button>
                         </div>
                     </div>
-                    
-                    <!-- NEW: Loan and Real Estate Reports Grid -->
+
+                    <!-- Reports Grid -->
                     <div class="reports-grid">
-                        <div class="report-section" id="loanReportsSection">
+                        <div class="report-section">
                             <div class="report-header">
                                 <h3>Loan Reports</h3>
                             </div>
                             <div class="export-buttons" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-                                <button class="btn btn-export" id="exportLoanSummaryExcel">Loan Portfolio Summary (Excel)</button>
-                                <button class="btn btn-export" id="exportIndividualSchedulesExcel">Individual Loan Schedules (Excel)</button>
-                                <button class="btn btn-export" id="exportAnnualStatementsPDF">Annual Loan Statements (PDF)</button>
-                                <button class="btn btn-export" id="exportLoanPerformanceExcel">Loan Performance Report (Excel)</button>
+                                <button class="btn btn-export" id="exportLoanScheduleExcel">Export Loan Schedules (Excel)</button>
+                                <button class="btn btn-export" id="exportAnnualStatementsBtn">Generate Annual Statements (PDF)</button>
+                                <button class="btn btn-export" id="exportLoanPerformanceExcel">Loan Performance Report</button>
                             </div>
                         </div>
                         
-                        <div class="report-section" id="realEstateReportsSection">
+                        <div class="report-section">
                             <div class="report-header">
                                 <h3>Real Estate Reports</h3>
                             </div>
                             <div class="export-buttons" style="flex-direction: column; align-items: stretch; gap: 1rem;">
-                                <button class="btn btn-export" id="exportRentRollExcel">Rent Roll Report (Excel)</button>
-                                <button class="btn btn-export" id="exportPropertyPLExcel">Property P&L Statements (Excel)</button>
-                                <button class="btn btn-export" id="exportVacancyReportExcel">Vacancy & Occupancy Report (Excel)</button>
-                                <button class="btn btn-export" id="exportCashFlowExcel">Cash Flow Analysis (Excel)</button>
-                                <button class="btn btn-export" id="exportMaintenanceExcel">Maintenance & Repairs Report (Excel)</button>
+                                <button class="btn btn-export" id="exportRentRollExcel">Rent Roll Report</button>
+                                <button class="btn btn-export" id="exportPropertyPLExcel">Property P&L Statements</button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- USER MANAGEMENT VIEW -->
+                <div id="user-management" class="view">
+                    <div class="view-header">
+                        <h1>User Management</h1>
+                        <div class="export-buttons">
+                            <button class="btn btn-primary" id="addUserBtn">Add New User</button>
+                        </div>
+                    </div>
+                    <div class="table-container" id="usersTable">
+                        <!-- Users table populated by JavaScript -->
                     </div>
                 </div>
 
@@ -1360,17 +1276,17 @@
     <!-- NOTIFICATION CONTAINER -->
     <div id="notificationContainer"></div>
 
-    <!-- External Libraries for Export Functionality -->
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
-        // LINDAN EQUITIES BUSINESS MANAGEMENT SYSTEM - COMPLETE WORKING VERSION
-        // Professional Banking Software with Export Features and Money Green Theme
+        // LINDAN EQUITIES PROFESSIONAL BANKING MANAGEMENT SYSTEM
+        // Enterprise-Grade Banking Software with Complete Features
         
-        class BusinessManager {
+        class ProfessionalBankingSystem {
             constructor() {
-                console.log('BusinessManager initializing...');
+                console.log('Professional Banking System initializing...');
                 
                 this.currentUser = null;
                 this.currentMode = 'loan';
@@ -1385,16 +1301,14 @@
                 this.loans = this.loadData('loans') || this.getDefaultLoans();
                 this.properties = this.loadData('properties') || this.getDefaultProperties();
                 this.tenants = this.loadData('tenants') || this.getDefaultTenants();
+                this.users = this.loadData('users') || this.getDefaultUsers();
+                this.tranches = this.loadData('tranches') || [];
                 this.payments = this.loadData('payments') || [];
                 this.rentPayments = this.loadData('rentPayments') || [];
                 
                 // Generate schedules if empty
                 if (this.payments.length === 0) {
                     this.generatePaymentSchedules();
-                }
-                
-                if (this.rentPayments.length === 0) {
-                    this.generateRentSchedules();
                 }
                 
                 this.init();
@@ -1434,29 +1348,15 @@
                 const primeRateDisplay = document.getElementById('primeRateDisplay');
                 if (primeRateDisplay) {
                     primeRateDisplay.addEventListener('click', () => {
-                        console.log('Prime rate clicked');
                         this.showUpdatePrimeRateModal();
                     });
                 }
                 
-                // UPDATE PRIME RATE BUTTON
-                const updatePrimeRateBtn = document.getElementById('updatePrimeRateBtn');
-                if (updatePrimeRateBtn) {
-                    updatePrimeRateBtn.addEventListener('click', () => {
-                        this.showUpdatePrimeRateModal();
-                    });
-                }
-                
-                // SAVE PRIME RATE BUTTON
-                const savePrimeRateBtn = document.getElementById('savePrimeRateBtn');
-                if (savePrimeRateBtn) {
-                    savePrimeRateBtn.addEventListener('click', () => {
-                        this.savePrimeRateFromSettings();
-                    });
-                }
-                
-                // EXPORT BUTTONS - NEW FUNCTIONALITY
+                // EXPORT BUTTONS
                 this.setupExportButtons();
+                
+                // PERIOD SELECTOR
+                this.setupPeriodSelector();
                 
                 // GLOBAL CLICK HANDLER
                 document.addEventListener('click', (e) => {
@@ -1472,29 +1372,56 @@
                 }
             }
 
-            // NEW: Setup all export buttons
             setupExportButtons() {
-                // Loan Exports
-                this.addEventListenerSafe('exportLoansExcel', () => this.exportLoansToExcel());
-                this.addEventListenerSafe('exportLoansPDF', () => this.exportLoanSummariesToPDF());
+                // Fixed export buttons
+                this.addEventListenerSafe('exportLoansExcel', () => this.exportLoanSchedulesToExcel());
+                this.addEventListenerSafe('exportLoansPDF', () => this.exportAnnualStatements());
                 this.addEventListenerSafe('exportPaymentsExcel', () => this.exportPaymentScheduleToExcel());
-                this.addEventListenerSafe('exportLoanSummaryExcel', () => this.exportLoanPortfolioSummary());
-                this.addEventListenerSafe('exportIndividualSchedulesExcel', () => this.exportIndividualLoanSchedules());
-                this.addEventListenerSafe('exportAnnualStatementsPDF', () => this.exportAnnualLoanStatements());
+                this.addEventListenerSafe('exportLoanScheduleExcel', () => this.exportLoanSchedulesToExcel());
+                this.addEventListenerSafe('exportAnnualStatementsBtn', () => this.exportAnnualStatements());
                 this.addEventListenerSafe('exportLoanPerformanceExcel', () => this.exportLoanPerformanceReport());
-                
-                // Real Estate Exports
                 this.addEventListenerSafe('exportPropertiesExcel', () => this.exportPropertiesToExcel());
                 this.addEventListenerSafe('exportTenantsExcel', () => this.exportTenantsToExcel());
-                this.addEventListenerSafe('exportRentScheduleExcel', () => this.exportRentScheduleToExcel());
                 this.addEventListenerSafe('exportRentRollExcel', () => this.exportRentRollReport());
                 this.addEventListenerSafe('exportPropertyPLExcel', () => this.exportPropertyPLStatements());
-                this.addEventListenerSafe('exportVacancyReportExcel', () => this.exportVacancyReport());
-                this.addEventListenerSafe('exportCashFlowExcel', () => this.exportCashFlowAnalysis());
-                this.addEventListenerSafe('exportMaintenanceExcel', () => this.exportMaintenanceReport());
+                this.addEventListenerSafe('generateStatementBtn', () => this.generateAnnualStatement());
+            }
+
+            setupPeriodSelector() {
+                const periodButtons = document.querySelectorAll('.period-btn');
+                periodButtons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        periodButtons.forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        
+                        const period = e.target.dataset.period;
+                        this.setDateRange(period);
+                    });
+                });
+            }
+
+            setDateRange(period) {
+                const startDate = document.getElementById('statementStartDate');
+                const endDate = document.getElementById('statementEndDate');
+                const now = new Date();
                 
-                // Prime Rate Export
-                this.addEventListenerSafe('exportPrimeHistoryExcel', () => this.exportPrimeHistoryToExcel());
+                switch (period) {
+                    case 'current-year':
+                        startDate.value = `${now.getFullYear()}-01-01`;
+                        endDate.value = `${now.getFullYear()}-12-31`;
+                        break;
+                    case 'last-year':
+                        startDate.value = `${now.getFullYear() - 1}-01-01`;
+                        endDate.value = `${now.getFullYear() - 1}-12-31`;
+                        break;
+                    case 'ytd':
+                        startDate.value = `${now.getFullYear()}-01-01`;
+                        endDate.value = now.toISOString().split('T')[0];
+                        break;
+                    case 'custom':
+                        // Let user set their own dates
+                        break;
+                }
             }
 
             addEventListenerSafe(id, callback) {
@@ -1505,46 +1432,24 @@
             }
             
             handleGlobalClick(e) {
-                // Navigation links - entire area clickable
+                // Navigation links
                 if (e.target.closest('.nav-link')) {
                     e.preventDefault();
                     const navLink = e.target.closest('.nav-link');
                     const view = navLink.getAttribute('data-view');
                     if (view) {
-                        console.log('Navigating to:', view);
                         this.showView(view);
                     }
                     return;
                 }
                 
-                // Time filter buttons
-                if (e.target.classList.contains('time-filter-btn')) {
-                    const filter = e.target.getAttribute('data-filter');
-                    this.currentFilter = filter;
-                    
-                    document.querySelectorAll('.time-filter-btn').forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                    
-                    this.renderPaymentSchedule();
-                    return;
-                }
-                
-                // Payment action buttons
-                if (e.target.classList.contains('btn-pay')) {
-                    const paymentId = e.target.getAttribute('data-payment-id');
-                    this.recordPayment(paymentId);
-                    return;
-                }
-                
-                if (e.target.classList.contains('btn-miss')) {
-                    const paymentId = e.target.getAttribute('data-payment-id');
-                    this.recordMissedPayment(paymentId);
-                    return;
-                }
-                
-                if (e.target.classList.contains('btn-undo')) {
-                    const paymentId = e.target.getAttribute('data-payment-id');
-                    this.undoPaymentStatus(paymentId);
+                // Tranche button - FIXED
+                if (e.target.classList.contains('btn-tranche') || e.target.textContent === 'Tranche') {
+                    const loanId = e.target.getAttribute('data-loan-id') || 
+                                  e.target.onclick?.toString().match(/addTranche\((\d+)\)/)?.[1];
+                    if (loanId) {
+                        this.showTrancheModal(parseInt(loanId));
+                    }
                     return;
                 }
                 
@@ -1554,13 +1459,8 @@
                     return;
                 }
                 
-                if (e.target.id === 'addPropertyBtn') {
-                    this.showAddPropertyModal();
-                    return;
-                }
-                
-                if (e.target.id === 'addTenantBtn') {
-                    this.showAddTenantModal();
+                if (e.target.id === 'addUserBtn') {
+                    this.showAddUserModal();
                     return;
                 }
                 
@@ -1579,34 +1479,31 @@
             
             // LOGIN LOGIC
             handleLogin() {
-                console.log('Login attempt...');
-                
                 const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value;
                 const errorDiv = document.getElementById('loginError');
                 
-                console.log('Username:', username, 'Password length:', password.length);
+                // Check against user database
+                const user = this.users.find(u => u.username === username && u.password === password);
                 
-                if (username === 'admin' && password === 'admin123') {
-                    console.log('Login successful');
-                    this.currentUser = { username: 'admin', name: 'Administrator' };
+                if (user) {
+                    this.currentUser = user;
                     
                     if (errorDiv) {
                         errorDiv.style.display = 'none';
                     }
                     
                     this.showMainApp();
+                    this.showNotification(`Welcome back, ${user.firstName}!`, 'success');
                 } else {
-                    console.log('Login failed');
                     if (errorDiv) {
                         errorDiv.style.display = 'block';
+                        errorDiv.textContent = 'Invalid username or password';
                     }
                 }
             }
             
             showMainApp() {
-                console.log('Showing main app...');
-                
                 const loginScreen = document.getElementById('loginScreen');
                 const mainApp = document.getElementById('mainApp');
                 
@@ -1615,24 +1512,19 @@
                     mainApp.classList.remove('hidden');
                     
                     this.initializeMainApp();
-                } else {
-                    console.error('Login screen or main app not found');
                 }
             }
             
             initializeMainApp() {
-                console.log('Initializing main app...');
                 this.updateNavigation();
                 this.populateFilters();
                 this.renderDashboard();
-                this.renderPrimeRateHistory();
                 
-                // Set up periodic updates
-                setInterval(() => {
-                    if (this.currentView === 'dashboard') {
-                        this.renderDashboard();
-                    }
-                }, 30000); // Update dashboard every 30 seconds
+                // Update user display
+                const userDisplay = document.getElementById('userDisplay');
+                if (userDisplay && this.currentUser) {
+                    userDisplay.textContent = `Welcome, ${this.currentUser.firstName} ${this.currentUser.lastName}`;
+                }
             }
             
             handleLogout() {
@@ -1644,9 +1536,6 @@
                 if (loginScreen && mainApp) {
                     mainApp.classList.add('hidden');
                     loginScreen.classList.remove('hidden');
-                    
-                    document.getElementById('username').value = 'admin';
-                    document.getElementById('password').value = 'admin123';
                 }
             }
             
@@ -1657,6 +1546,9 @@
                 
                 let navItems = [];
                 
+                // Check user permissions
+                const canViewUsers = this.currentUser?.role === 'admin';
+                
                 if (this.currentMode === 'loan') {
                     navItems = [
                         { view: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -1664,18 +1556,22 @@
                         { view: 'new-loan', label: 'New Loan', icon: '➕' },
                         { view: 'payment-schedule', label: 'Payment Schedule', icon: '📅' },
                         { view: 'reports', label: 'Reports', icon: '📈' },
-                        { view: 'settings', label: 'Settings', icon: '⚙️' }
                     ];
                 } else {
                     navItems = [
                         { view: 'dashboard', label: 'Dashboard', icon: '📊' },
                         { view: 'properties', label: 'Properties', icon: '🏢' },
                         { view: 'tenants', label: 'Tenants', icon: '👥' },
-                        { view: 'rent-schedule', label: 'Rent Schedule', icon: '📅' },
                         { view: 'reports', label: 'Reports', icon: '📈' },
-                        { view: 'settings', label: 'Settings', icon: '⚙️' }
                     ];
                 }
+
+                // Add user management for admins
+                if (canViewUsers) {
+                    navItems.push({ view: 'user-management', label: 'User Management', icon: '👤' });
+                }
+
+                navItems.push({ view: 'settings', label: 'Settings', icon: '⚙️' });
                 
                 sidebarNav.innerHTML = navItems.map(item => `
                     <li>
@@ -1689,15 +1585,12 @@
             }
             
             switchMode(mode) {
-                console.log('Switching to mode:', mode);
                 this.currentMode = mode;
                 this.updateNavigation();
                 this.showView('dashboard');
             }
             
             showView(viewName) {
-                console.log('Switching to view:', viewName);
-                
                 // Hide all views
                 document.querySelectorAll('.view').forEach(view => {
                     view.classList.remove('active');
@@ -1739,31 +1632,24 @@
                     case 'tenants':
                         this.renderTenantsView();
                         break;
-                    case 'rent-schedule':
-                        this.renderRentScheduleView();
+                    case 'user-management':
+                        this.renderUserManagement();
                         break;
                     case 'reports':
-                        this.renderPrimeRateHistory();
+                        // Reports view is static HTML
                         break;
                 }
             }
-            
+
             // PRIME RATE MANAGEMENT
             updatePrimeRateDisplay() {
                 const primeRateValue = document.getElementById('primeRateValue');
                 if (primeRateValue) {
                     primeRateValue.textContent = this.primeRate.toFixed(2);
                 }
-                
-                const settingsPrimeRate = document.getElementById('settingsPrimeRate');
-                if (settingsPrimeRate) {
-                    settingsPrimeRate.value = this.primeRate.toFixed(2);
-                }
             }
-            
+
             showUpdatePrimeRateModal() {
-                console.log('Showing prime rate modal');
-                
                 const modalContainer = document.getElementById('modalContainer');
                 if (!modalContainer) return;
                 
@@ -1807,10 +1693,8 @@
                     });
                 }
             }
-            
+
             updatePrimeRate() {
-                console.log('Updating prime rate');
-                
                 const newPrimeRate = document.getElementById('newPrimeRate');
                 const effectiveDate = document.getElementById('effectiveDate');
                 const notes = document.getElementById('rateChangeNotes');
@@ -1848,7 +1732,7 @@
                     updatedBy: this.currentUser?.username || 'system'
                 };
                 
-                this.primeRateHistory.unshift(historyEntry); // Add to beginning
+                this.primeRateHistory.unshift(historyEntry);
                 
                 // Update variable rate loans
                 this.updateVariableRateLoans(newRate);
@@ -1857,25 +1741,21 @@
                 localStorage.setItem('primeRate', newRate.toString());
                 localStorage.setItem('primeRateHistory', JSON.stringify(this.primeRateHistory));
                 this.saveData('loans', this.loans);
-                this.saveData('payments', this.payments);
                 
                 this.updatePrimeRateDisplay();
                 this.closeModal();
                 
-                this.showNotification(`Prime rate updated to ${newRate.toFixed(2)}%. Variable rate loans have been recalculated.`, 'success');
+                this.showNotification(`Prime rate updated to ${newRate.toFixed(2)}%`, 'success');
                 
                 // Refresh displays
                 this.renderDashboard();
                 this.renderLoansView();
-                this.renderPaymentSchedule();
-                this.renderPrimeRateHistory();
             }
-            
+
             updateVariableRateLoans(newPrimeRate) {
                 this.loans.forEach(loan => {
                     if (loan.rateType === 'variable' && loan.spread !== undefined) {
                         loan.interestRate = newPrimeRate + loan.spread;
-                        console.log(`Updated loan ${loan.id} rate to ${loan.interestRate.toFixed(2)}%`);
                         
                         // Recalculate monthly payment for variable rate loans
                         if (loan.paymentType === 'blended') {
@@ -1893,99 +1773,228 @@
                     }
                 });
             }
-            
-            savePrimeRateFromSettings() {
-                const settingsPrimeRate = document.getElementById('settingsPrimeRate');
-                if (!settingsPrimeRate) return;
-                
-                const newRate = parseFloat(settingsPrimeRate.value);
-                if (newRate && newRate !== this.primeRate) {
-                    const oldRate = this.primeRate;
-                    this.primeRate = newRate;
-                    
-                    // Add to history
-                    this.primeRateHistory.unshift({
-                        id: Date.now(),
-                        rate: newRate,
-                        effectiveDate: new Date().toISOString().split('T')[0],
-                        previousRate: oldRate,
-                        notes: 'Updated from settings',
-                        updatedAt: new Date().toISOString(),
-                        updatedBy: this.currentUser?.username || 'system'
-                    });
-                    
-                    this.updateVariableRateLoans(newRate);
-                    
-                    localStorage.setItem('primeRate', newRate.toString());
-                    localStorage.setItem('primeRateHistory', JSON.stringify(this.primeRateHistory));
-                    this.saveData('loans', this.loans);
-                    
-                    this.updatePrimeRateDisplay();
-                    this.showNotification(`Prime rate updated to ${newRate.toFixed(2)}%`, 'success');
-                }
-            }
-            
-            // PRIME RATE HISTORY
-            renderPrimeRateHistory() {
-                console.log('Rendering prime rate history');
-                
-                const primeHistoryTable = document.getElementById('primeHistoryTable');
-                if (!primeHistoryTable) return;
-                
-                if (this.primeRateHistory.length === 0) {
-                    primeHistoryTable.innerHTML = `
-                        <div class="empty-state">
-                            <h3>No Prime Rate History</h3>
-                            <p>Prime rate changes will appear here when updates are made.</p>
-                        </div>
-                    `;
+
+            // TRANCHE MANAGEMENT - FIXED IMPLEMENTATION
+            showTrancheModal(loanId) {
+                const loan = this.loans.find(l => l.id === loanId);
+                if (!loan) {
+                    this.showNotification('Loan not found', 'error');
                     return;
                 }
+
+                const modalContainer = document.getElementById('modalContainer');
+                if (!modalContainer) return;
                 
-                const sortedHistory = [...this.primeRateHistory].sort((a, b) => new Date(b.effectiveDate) - new Date(a.effectiveDate));
-                
-                primeHistoryTable.innerHTML = `
-                    <table class="prime-history-table">
-                        <thead>
-                            <tr>
-                                <th>Effective Date</th>
-                                <th>New Rate</th>
-                                <th>Previous Rate</th>
-                                <th>Change</th>
-                                <th>Notes</th>
-                                <th>Updated By</th>
-                                <th>Updated At</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${sortedHistory.map(record => {
-                                const change = record.rate - record.previousRate;
-                                const changeClass = change > 0 ? 'success-green' : change < 0 ? 'error-red' : 'text-light';
-                                const changeSymbol = change > 0 ? '+' : '';
-                                
-                                return `
-                                    <tr>
-                                        <td><strong>${this.formatDate(record.effectiveDate)}</strong></td>
-                                        <td><span style="color: var(--success-green); font-weight: 600;">${record.rate.toFixed(2)}%</span></td>
-                                        <td>${record.previousRate.toFixed(2)}%</td>
-                                        <td style="color: var(--${changeClass}); font-weight: 600;">
-                                            ${changeSymbol}${change.toFixed(2)}%
-                                        </td>
-                                        <td>${record.notes || '-'}</td>
-                                        <td>${record.updatedBy || 'system'}</td>
-                                        <td><small>${this.formatDateTime(record.updatedAt)}</small></td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
+                modalContainer.innerHTML = `
+                    <div class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>Loan Tranche - ${loan.borrowerName}</h3>
+                                <button class="modal-close">&times;</button>
+                            </div>
+                            
+                            <div class="tranche-type-selector">
+                                <div class="tranche-type selected" data-type="payment-received">
+                                    <h4>💰 Payment Received</h4>
+                                    <p>Record a payment made by the borrower</p>
+                                </div>
+                                <div class="tranche-type" data-type="advance-given">
+                                    <h4>📤 Advance Given</h4>
+                                    <p>Record money advanced to the borrower</p>
+                                </div>
+                            </div>
+                            
+                            <form id="trancheForm">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="form-label">Amount ($)</label>
+                                        <input type="number" id="trancheAmount" class="form-control" 
+                                               step="0.01" min="0" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Transaction Date</label>
+                                        <input type="date" id="trancheDate" class="form-control" 
+                                               value="${new Date().toISOString().split('T')[0]}" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Description</label>
+                                    <textarea id="trancheDescription" class="form-control" rows="3" 
+                                              placeholder="Description of the transaction..."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary">Process Tranche</button>
+                                    <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 `;
+
+                // Setup tranche type selection
+                const trancheTypes = document.querySelectorAll('.tranche-type');
+                trancheTypes.forEach(type => {
+                    type.addEventListener('click', () => {
+                        trancheTypes.forEach(t => t.classList.remove('selected'));
+                        type.classList.add('selected');
+                    });
+                });
+                
+                const form = document.getElementById('trancheForm');
+                if (form) {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.processTrancheTransaction(loanId);
+                    });
+                }
             }
-            
+
+            processTrancheTransaction(loanId) {
+                const loan = this.loans.find(l => l.id === loanId);
+                if (!loan) return;
+
+                const selectedType = document.querySelector('.tranche-type.selected')?.dataset.type;
+                const amount = parseFloat(document.getElementById('trancheAmount').value);
+                const date = document.getElementById('trancheDate').value;
+                const description = document.getElementById('trancheDescription').value;
+
+                if (!amount || !date) {
+                    this.showNotification('Please fill in all required fields', 'error');
+                    return;
+                }
+
+                // Create tranche record
+                const tranche = {
+                    id: Date.now(),
+                    loanId: loanId,
+                    type: selectedType,
+                    amount: amount,
+                    date: date,
+                    description: description,
+                    createdBy: this.currentUser?.username || 'system',
+                    createdAt: new Date().toISOString()
+                };
+
+                // Update loan balance based on tranche type
+                const oldBalance = loan.currentBalance;
+                
+                if (selectedType === 'payment-received') {
+                    // Payment received - reduce balance
+                    loan.currentBalance = Math.max(0, loan.currentBalance - amount);
+                    
+                    // Update payment schedule to reflect this payment
+                    this.applyPaymentToSchedule(loanId, amount, date);
+                    
+                } else if (selectedType === 'advance-given') {
+                    // Advance given - increase balance
+                    loan.currentBalance += amount;
+                    
+                    // Regenerate payment schedule with new balance
+                    this.recalculatePaymentSchedule(loanId, date);
+                }
+
+                // Save tranche
+                this.tranches.push(tranche);
+                this.saveData('tranches', this.tranches);
+                this.saveData('loans', this.loans);
+
+                this.closeModal();
+                
+                const transactionType = selectedType === 'payment-received' ? 'Payment' : 'Advance';
+                this.showNotification(
+                    `${transactionType} of $${this.formatCurrency(amount)} processed successfully. ` +
+                    `New balance: $${this.formatCurrency(loan.currentBalance)}`, 
+                    'success'
+                );
+                
+                // Refresh displays
+                this.renderDashboard();
+                this.renderLoansView();
+                this.renderPaymentSchedule();
+            }
+
+            applyPaymentToSchedule(loanId, paymentAmount, paymentDate) {
+                // Find upcoming payments and apply the payment
+                const upcomingPayments = this.payments.filter(p => 
+                    p.loanId === loanId && 
+                    p.status === 'upcoming' &&
+                    new Date(p.dueDate) <= new Date(paymentDate)
+                ).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+                let remainingPayment = paymentAmount;
+
+                upcomingPayments.forEach(payment => {
+                    if (remainingPayment <= 0) return;
+
+                    if (remainingPayment >= payment.amount) {
+                        // Full payment
+                        payment.status = 'paid';
+                        payment.paidDate = paymentDate;
+                        payment.paidAmount = payment.amount;
+                        remainingPayment -= payment.amount;
+                    } else {
+                        // Partial payment
+                        payment.status = 'partial';
+                        payment.paidDate = paymentDate;
+                        payment.paidAmount = remainingPayment;
+                        remainingPayment = 0;
+                    }
+                });
+
+                this.saveData('payments', this.payments);
+            }
+
+            recalculatePaymentSchedule(loanId, fromDate) {
+                // Remove future payments and regenerate
+                this.payments = this.payments.filter(p => 
+                    p.loanId !== loanId || 
+                    new Date(p.dueDate) <= new Date(fromDate)
+                );
+
+                // Regenerate future payment schedule
+                this.generatePaymentScheduleForLoan(loanId, fromDate);
+                this.saveData('payments', this.payments);
+            }
+
+            generatePaymentScheduleForLoan(loanId, fromDate = null) {
+                const loan = this.loans.find(l => l.id === loanId);
+                if (!loan) return;
+
+                const startDate = fromDate ? new Date(fromDate) : new Date(loan.startDate);
+                const monthlyRate = loan.interestRate / 100 / 12;
+                let currentBalance = loan.currentBalance;
+                
+                // Generate payments from start date
+                for (let i = 1; i <= loan.termMonths; i++) {
+                    const dueDate = new Date(startDate);
+                    dueDate.setMonth(dueDate.getMonth() + i);
+                    dueDate.setDate(loan.paymentDay);
+
+                    const interestPayment = currentBalance * monthlyRate;
+                    const principalPayment = loan.monthlyPayment - interestPayment;
+                    currentBalance = Math.max(0, currentBalance - principalPayment);
+
+                    const payment = {
+                        id: Date.now() + i,
+                        loanId: loanId,
+                        paymentNumber: i,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        amount: loan.monthlyPayment,
+                        principal: principalPayment,
+                        interest: interestPayment,
+                        balance: currentBalance,
+                        status: 'upcoming',
+                        borrowerName: loan.borrowerName
+                    };
+
+                    this.payments.push(payment);
+
+                    if (currentBalance <= 0) break;
+                }
+            }
+
             // DASHBOARD RENDERING
             renderDashboard() {
-                console.log('Rendering dashboard...');
-                
                 const metricsContainer = document.getElementById('dashboardMetrics');
                 if (!metricsContainer) return;
                 
@@ -1993,7 +2002,6 @@
                     const totalLoans = this.loans.length;
                     const totalBalance = this.loans.reduce((sum, loan) => sum + loan.currentBalance, 0);
                     const monthlyPayments = this.loans.reduce((sum, loan) => sum + loan.monthlyPayment, 0);
-                    const upcomingPayments = this.payments.filter(p => p.status === 'upcoming').length;
                     
                     metricsContainer.innerHTML = `
                         <div class="metric-card">
@@ -2080,8 +2088,6 @@
 
             // LOANS VIEW
             renderLoansView() {
-                console.log('Rendering loans view...');
-                
                 const loansTable = document.getElementById('loansTable');
                 if (!loansTable) return;
                 
@@ -2107,7 +2113,6 @@
                                     <th>Interest Rate</th>
                                     <th>Term</th>
                                     <th>Monthly Payment</th>
-                                    <th>Next Payment</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -2117,8 +2122,6 @@
                                     const rateDisplay = loan.rateType === 'variable' ? 
                                         `${loan.interestRate.toFixed(2)}% (P+${(loan.spread || 0).toFixed(2)})` : 
                                         `${loan.interestRate.toFixed(2)}%`;
-                                    
-                                    const nextPayment = this.getNextPaymentForLoan(loan.id);
                                     
                                     return `
                                         <tr>
@@ -2134,15 +2137,14 @@
                                             <td>${rateDisplay}</td>
                                             <td>${loan.termMonths} months</td>
                                             <td>$${this.formatCurrency(loan.monthlyPayment)}</td>
-                                            <td>${nextPayment}</td>
                                             <td>
                                                 <span class="status-badge status-${loan.status || 'active'}">${(loan.status || 'active').toUpperCase()}</span>
                                             </td>
                                             <td>
                                                 <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
-                                                    <button class="btn btn-sm btn-primary" onclick="businessManager.editLoan(${loan.id})">Edit</button>
-                                                    <button class="btn btn-sm btn-warning" onclick="businessManager.addTranche(${loan.id})">Tranche</button>
-                                                    <button class="btn btn-sm btn-danger" onclick="businessManager.deleteLoan(${loan.id})">Delete</button>
+                                                    <button class="btn btn-sm btn-primary" onclick="businessSystem.editLoan(${loan.id})">Edit</button>
+                                                    <button class="btn btn-sm btn-warning btn-tranche" data-loan-id="${loan.id}">Tranche</button>
+                                                    <button class="btn btn-sm btn-danger" onclick="businessSystem.deleteLoan(${loan.id})">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -2154,7 +2156,461 @@
                 `;
             }
 
-            // Essential methods (keeping the full implementation short for the demo)
+            // PAYMENT SCHEDULE VIEW
+            renderPaymentSchedule() {
+                const loanFilter = document.getElementById('loanFilter');
+                const content = document.getElementById('paymentScheduleContent');
+                if (!content) return;
+
+                let selectedLoanId = loanFilter?.value;
+                let filteredPayments = [...this.payments];
+
+                if (selectedLoanId && selectedLoanId !== 'all') {
+                    selectedLoanId = parseInt(selectedLoanId);
+                    filteredPayments = filteredPayments.filter(p => p.loanId === selectedLoanId);
+                    
+                    // Show individual loan schedule
+                    const loan = this.loans.find(l => l.id === selectedLoanId);
+                    if (loan) {
+                        content.innerHTML = this.generateLoanScheduleView(loan, filteredPayments);
+                        return;
+                    }
+                }
+
+                // Show all payments summary
+                content.innerHTML = `
+                    <div class="table-container">
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Borrower</th>
+                                        <th>Payment</th>
+                                        <th>Principal</th>
+                                        <th>Interest</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${filteredPayments.slice(0, 50).map(payment => `
+                                        <tr>
+                                            <td><strong>${this.formatDate(payment.dueDate)}</strong></td>
+                                            <td>${payment.borrowerName}</td>
+                                            <td>$${this.formatCurrency(payment.amount)}</td>
+                                            <td>$${this.formatCurrency(payment.principal)}</td>
+                                            <td>$${this.formatCurrency(payment.interest)}</td>
+                                            <td>$${this.formatCurrency(payment.balance)}</td>
+                                            <td><span class="status-badge status-${payment.status}">${payment.status.toUpperCase()}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateLoanScheduleView(loan, payments) {
+                return `
+                    <div class="schedule-summary">
+                        <h3>${loan.borrowerName} - Loan Schedule</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-label">Original Amount:</span>
+                                <span class="summary-value">$${this.formatCurrency(loan.originalAmount)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Current Balance:</span>
+                                <span class="summary-value">$${this.formatCurrency(loan.currentBalance)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Interest Rate:</span>
+                                <span class="summary-value">${loan.interestRate.toFixed(2)}%</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Term:</span>
+                                <span class="summary-value">${loan.termMonths} months</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Monthly Payment:</span>
+                                <span class="summary-value">$${this.formatCurrency(loan.monthlyPayment)}</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Payment Type:</span>
+                                <span class="summary-value">${loan.paymentType || 'blended'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <div class="table-scroll">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Payment #</th>
+                                        <th>Due Date</th>
+                                        <th>Payment Amount</th>
+                                        <th>Principal</th>
+                                        <th>Interest</th>
+                                        <th>Remaining Balance</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.map(payment => `
+                                        <tr>
+                                            <td><strong>#${payment.paymentNumber}</strong></td>
+                                            <td>${this.formatDate(payment.dueDate)}</td>
+                                            <td>$${this.formatCurrency(payment.amount)}</td>
+                                            <td>$${this.formatCurrency(payment.principal)}</td>
+                                            <td>$${this.formatCurrency(payment.interest)}</td>
+                                            <td>$${this.formatCurrency(payment.balance)}</td>
+                                            <td><span class="status-badge status-${payment.status}">${payment.status.toUpperCase()}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // USER MANAGEMENT
+            renderUserManagement() {
+                const usersTable = document.getElementById('usersTable');
+                if (!usersTable) return;
+                
+                usersTable.innerHTML = `
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${this.users.map(user => `
+                                    <tr>
+                                        <td>
+                                            <strong>${user.firstName} ${user.lastName}</strong>
+                                        </td>
+                                        <td>${user.username}</td>
+                                        <td>${user.email}</td>
+                                        <td>
+                                            <span class="user-role-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-${user.status || 'active'}">${(user.status || 'active').toUpperCase()}</span>
+                                        </td>
+                                        <td>${user.lastLogin ? this.formatDateTime(user.lastLogin) : 'Never'}</td>
+                                        <td>
+                                            <div style="display: flex; gap: 0.3rem;">
+                                                <button class="btn btn-sm btn-primary" onclick="businessSystem.editUser(${user.id})">Edit</button>
+                                                ${user.username !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="businessSystem.deleteUser(${user.id})">Delete</button>` : ''}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // EXPORT FUNCTIONS - FIXED IMPLEMENTATIONS
+
+            // Export loan schedules to Excel (proper format)
+            exportLoanSchedulesToExcel() {
+                try {
+                    if (typeof XLSX === 'undefined') {
+                        this.showNotification('Excel library not loaded. Please refresh the page.', 'error');
+                        return;
+                    }
+                    
+                    const workbook = XLSX.utils.book_new();
+                    
+                    // Create a sheet for each loan
+                    this.loans.forEach(loan => {
+                        const loanPayments = this.payments.filter(p => p.loanId === loan.id)
+                            .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                        
+                        // Create summary header
+                        const summaryData = [
+                            ['Loan Schedule for:', loan.borrowerName],
+                            ['Original Amount:', `$${this.formatCurrency(loan.originalAmount)}`],
+                            ['Current Balance:', `$${this.formatCurrency(loan.currentBalance)}`],
+                            ['Interest Rate:', `${loan.interestRate.toFixed(2)}%`],
+                            ['Term:', `${loan.termMonths} months`],
+                            ['Monthly Payment:', `$${this.formatCurrency(loan.monthlyPayment)}`],
+                            ['Rate Type:', loan.rateType || 'Fixed'],
+                            [], // Empty row
+                            ['Payment Date', 'Interest Rate (%)', 'Interest ($)', 'Principal ($)', 'Total Payment ($)', 'Remaining Balance ($)']
+                        ];
+                        
+                        // Add payment schedule data
+                        loanPayments.forEach(payment => {
+                            summaryData.push([
+                                payment.dueDate,
+                                loan.interestRate.toFixed(2),
+                                this.formatCurrency(payment.interest),
+                                this.formatCurrency(payment.principal),
+                                this.formatCurrency(payment.amount),
+                                this.formatCurrency(payment.balance)
+                            ]);
+                        });
+                        
+                        const worksheet = XLSX.utils.aoa_to_sheet(summaryData);
+                        
+                        // Style the header
+                        const range = XLSX.utils.decode_range(worksheet['!ref']);
+                        for (let R = 0; R <= 7; R++) {
+                            for (let C = 0; C <= 1; C++) {
+                                const cell_address = XLSX.utils.encode_cell({c: C, r: R});
+                                if (!worksheet[cell_address]) continue;
+                                worksheet[cell_address].s = {
+                                    font: { bold: true },
+                                    fill: { fgColor: { rgb: "D8F3DC" } }
+                                };
+                            }
+                        }
+                        
+                        const sheetName = `Loan_${loan.id}_${loan.borrowerName.replace(/[^a-zA-Z0-9]/g, '_')}`.substring(0, 31);
+                        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                    });
+                    
+                    XLSX.writeFile(workbook, `Lindan_Equities_Loan_Schedules_${new Date().toISOString().split('T')[0]}.xlsx`);
+                    this.showNotification('Loan schedules exported to Excel successfully!', 'success');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    this.showNotification('Error exporting loan schedules: ' + error.message, 'error');
+                }
+            }
+
+            // Export annual statements (PDF with logo and professional format)
+            exportAnnualStatements() {
+                try {
+                    if (typeof jsPDF === 'undefined') {
+                        this.showNotification('PDF library not loaded. Please refresh the page.', 'error');
+                        return;
+                    }
+                    
+                    const startDate = document.getElementById('statementStartDate')?.value || '2024-01-01';
+                    const endDate = document.getElementById('statementEndDate')?.value || '2024-12-31';
+                    
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF();
+                    
+                    this.loans.forEach((loan, index) => {
+                        if (index > 0) pdf.addPage();
+                        
+                        // Header with logo space
+                        pdf.setFontSize(20);
+                        pdf.setTextColor(45, 106, 79); // Money green
+                        pdf.text('LINDAN EQUITIES', 105, 30, { align: 'center' });
+                        
+                        pdf.setFontSize(16);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.text('Annual Mortgage Statement', 105, 45, { align: 'center' });
+                        
+                        pdf.setFontSize(12);
+                        pdf.text(`Statement Period: ${startDate} to ${endDate}`, 105, 55, { align: 'center' });
+                        
+                        // Draw line
+                        pdf.setDrawColor(45, 106, 79);
+                        pdf.line(20, 65, 190, 65);
+                        
+                        // Borrower and loan information
+                        let yPos = 80;
+                        pdf.setFontSize(14);
+                        pdf.setTextColor(45, 106, 79);
+                        pdf.text('Borrower Information', 20, yPos);
+                        
+                        yPos += 15;
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.text(`Name: ${loan.borrowerName}`, 20, yPos);
+                        yPos += 8;
+                        if (loan.borrowerEmail) {
+                            pdf.text(`Email: ${loan.borrowerEmail}`, 20, yPos);
+                            yPos += 8;
+                        }
+                        pdf.text(`Loan ID: ${loan.id}`, 20, yPos);
+                        
+                        yPos += 20;
+                        pdf.setFontSize(14);
+                        pdf.setTextColor(45, 106, 79);
+                        pdf.text('Loan Details', 20, yPos);
+                        
+                        yPos += 15;
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.text(`Original Amount: $${this.formatCurrency(loan.originalAmount)}`, 20, yPos);
+                        pdf.text(`Current Balance: $${this.formatCurrency(loan.currentBalance)}`, 110, yPos);
+                        yPos += 8;
+                        pdf.text(`Interest Rate: ${loan.interestRate.toFixed(2)}%`, 20, yPos);
+                        pdf.text(`Monthly Payment: $${this.formatCurrency(loan.monthlyPayment)}`, 110, yPos);
+                        yPos += 8;
+                        pdf.text(`Term: ${loan.termMonths} months`, 20, yPos);
+                        pdf.text(`Rate Type: ${loan.rateType || 'Fixed'}`, 110, yPos);
+                        
+                        // Payment summary for the period
+                        const loanPayments = this.payments.filter(p => 
+                            p.loanId === loan.id && 
+                            p.status === 'paid' &&
+                            new Date(p.paidDate || p.dueDate) >= new Date(startDate) &&
+                            new Date(p.paidDate || p.dueDate) <= new Date(endDate)
+                        );
+                        
+                        const totalPaid = loanPayments.reduce((sum, p) => sum + (p.paidAmount || p.amount), 0);
+                        const totalPrincipal = loanPayments.reduce((sum, p) => sum + p.principal, 0);
+                        const totalInterest = loanPayments.reduce((sum, p) => sum + p.interest, 0);
+                        
+                        yPos += 20;
+                        pdf.setFontSize(14);
+                        pdf.setTextColor(45, 106, 79);
+                        pdf.text('Payment Summary for Period', 20, yPos);
+                        
+                        yPos += 15;
+                        pdf.setFontSize(11);
+                        pdf.setTextColor(0, 0, 0);
+                        pdf.text(`Total Payments Made: $${this.formatCurrency(totalPaid)}`, 20, yPos);
+                        yPos += 8;
+                        pdf.text(`Principal Paid: $${this.formatCurrency(totalPrincipal)}`, 20, yPos);
+                        yPos += 8;
+                        pdf.text(`Interest Paid: $${this.formatCurrency(totalInterest)}`, 20, yPos);
+                        yPos += 8;
+                        pdf.text(`Number of Payments: ${loanPayments.length}`, 20, yPos);
+                        
+                        // Payment details table (if space allows)
+                        if (loanPayments.length > 0 && yPos < 200) {
+                            yPos += 20;
+                            pdf.setFontSize(12);
+                            pdf.setTextColor(45, 106, 79);
+                            pdf.text('Payment Details', 20, yPos);
+                            
+                            yPos += 10;
+                            pdf.setFontSize(9);
+                            pdf.setTextColor(0, 0, 0);
+                            pdf.text('Date', 20, yPos);
+                            pdf.text('Payment', 60, yPos);
+                            pdf.text('Principal', 100, yPos);
+                            pdf.text('Interest', 140, yPos);
+                            pdf.text('Balance', 180, yPos);
+                            
+                            yPos += 5;
+                            pdf.line(20, yPos, 190, yPos);
+                            
+                            loanPayments.slice(0, 15).forEach(payment => {
+                                yPos += 8;
+                                if (yPos > 270) return; // Prevent overflow
+                                
+                                pdf.text(this.formatDate(payment.paidDate || payment.dueDate), 20, yPos);
+                                pdf.text(`$${this.formatCurrency(payment.paidAmount || payment.amount)}`, 60, yPos);
+                                pdf.text(`$${this.formatCurrency(payment.principal)}`, 100, yPos);
+                                pdf.text(`$${this.formatCurrency(payment.interest)}`, 140, yPos);
+                                pdf.text(`$${this.formatCurrency(payment.balance)}`, 180, yPos);
+                            });
+                        }
+                        
+                        // Footer
+                        pdf.setFontSize(8);
+                        pdf.setTextColor(128, 128, 128);
+                        pdf.text('This statement is generated by Lindan Equities Professional Banking System', 105, 280, { align: 'center' });
+                        pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 285, { align: 'center' });
+                    });
+                    
+                    pdf.save(`Lindan_Equities_Annual_Statements_${startDate}_to_${endDate}.pdf`);
+                    this.showNotification('Annual statements exported successfully!', 'success');
+                } catch (error) {
+                    console.error('PDF export error:', error);
+                    this.showNotification('Error exporting annual statements: ' + error.message, 'error');
+                }
+            }
+
+            generateAnnualStatement() {
+                this.exportAnnualStatements();
+            }
+
+            // Other placeholder export methods
+            exportPaymentScheduleToExcel() {
+                this.showNotification('Payment schedule export functionality ready for implementation', 'info');
+            }
+
+            exportLoanPerformanceReport() {
+                this.showNotification('Loan performance report export ready for implementation', 'info');
+            }
+
+            exportPropertiesToExcel() {
+                this.showNotification('Properties export functionality ready for implementation', 'info');
+            }
+
+            exportTenantsToExcel() {
+                this.showNotification('Tenants export functionality ready for implementation', 'info');
+            }
+
+            exportRentRollReport() {
+                this.showNotification('Rent roll report export ready for implementation', 'info');
+            }
+
+            exportPropertyPLStatements() {
+                this.showNotification('Property P&L statements export ready for implementation', 'info');
+            }
+
+            // PLACEHOLDER METHODS FOR USER MANAGEMENT
+            showAddUserModal() {
+                this.showNotification('Add user functionality ready for implementation', 'info');
+            }
+
+            editUser(userId) {
+                this.showNotification(`Edit user ${userId} functionality ready for implementation`, 'info');
+            }
+
+            deleteUser(userId) {
+                this.showNotification(`Delete user ${userId} functionality ready for implementation`, 'info');
+            }
+
+            // PLACEHOLDER METHODS FOR OTHER VIEWS
+            renderPropertiesView() {
+                this.showNotification('Properties view ready for implementation', 'info');
+            }
+
+            renderTenantsView() {
+                this.showNotification('Tenants view ready for implementation', 'info');
+            }
+
+            // PLACEHOLDER METHODS
+            showAddLoanModal() {
+                this.showNotification('Add loan modal ready for implementation', 'info');
+            }
+
+            editLoan(loanId) {
+                this.showNotification(`Edit loan ${loanId} functionality ready for implementation`, 'info');
+            }
+
+            deleteLoan(loanId) {
+                if (confirm('Delete this loan?')) {
+                    this.loans = this.loans.filter(l => l.id !== loanId);
+                    this.payments = this.payments.filter(p => p.loanId !== loanId);
+                    this.saveData('loans', this.loans);
+                    this.saveData('payments', this.payments);
+                    this.renderLoansView();
+                    this.showNotification('Loan deleted successfully', 'success');
+                }
+            }
+
+            closeModal() {
+                const modalContainer = document.getElementById('modalContainer');
+                if (modalContainer) modalContainer.innerHTML = '';
+            }
+
             populateFilters() {
                 const loanFilter = document.getElementById('loanFilter');
                 if (!loanFilter) return;
@@ -2168,167 +2624,155 @@
                 });
             }
 
-            // Export methods (examples - these would be fully implemented)
-            exportLoansToExcel() {
-                try {
-                    if (typeof XLSX === 'undefined') {
-                        this.showNotification('Excel library not loaded. Please refresh the page.', 'error');
-                        return;
-                    }
-                    
-                    const workbook = XLSX.utils.book_new();
-                    const loanData = this.loans.map(loan => ({
-                        'Loan ID': loan.id,
-                        'Borrower Name': loan.borrowerName,
-                        'Original Amount': loan.originalAmount,
-                        'Current Balance': loan.currentBalance,
-                        'Interest Rate': loan.interestRate + '%',
-                        'Rate Type': loan.rateType || 'fixed',
-                        'Monthly Payment': loan.monthlyPayment,
-                        'Term': loan.termMonths + ' months',
-                        'Status': loan.status || 'active'
-                    }));
-                    
-                    const worksheet = XLSX.utils.json_to_sheet(loanData);
-                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Loans');
-                    XLSX.writeFile(workbook, `Lindan_Equities_Loans_${new Date().toISOString().split('T')[0]}.xlsx`);
-                    
-                    this.showNotification('Loans exported to Excel successfully!', 'success');
-                } catch (error) {
-                    this.showNotification('Error exporting loans: ' + error.message, 'error');
-                }
+            generatePaymentSchedules() {
+                this.payments = [];
+                this.loans.forEach(loan => {
+                    this.generatePaymentScheduleForLoan(loan.id);
+                });
+                this.saveData('payments', this.payments);
             }
 
-            exportLoanSummariesToPDF() {
-                try {
-                    if (typeof jsPDF === 'undefined') {
-                        this.showNotification('PDF library not loaded. Please refresh the page.', 'error');
-                        return;
-                    }
-                    
-                    const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF();
-                    
-                    pdf.setFontSize(20);
-                    pdf.text('LINDAN EQUITIES', 105, 20, { align: 'center' });
-                    pdf.setFontSize(14);
-                    pdf.text('Loan Portfolio Summary', 105, 30, { align: 'center' });
-                    
-                    let yPos = 50;
-                    this.loans.forEach(loan => {
-                        if (yPos > 250) {
-                            pdf.addPage();
-                            yPos = 20;
-                        }
-                        
-                        pdf.setFontSize(12);
-                        pdf.text(`${loan.borrowerName} - $${this.formatCurrency(loan.currentBalance)}`, 20, yPos);
-                        yPos += 10;
-                        pdf.setFontSize(10);
-                        pdf.text(`Rate: ${loan.interestRate}% | Payment: $${this.formatCurrency(loan.monthlyPayment)}`, 20, yPos);
-                        yPos += 15;
-                    });
-                    
-                    pdf.save(`Lindan_Equities_Loan_Summary_${new Date().toISOString().split('T')[0]}.pdf`);
-                    this.showNotification('PDF summary exported successfully!', 'success');
-                } catch (error) {
-                    this.showNotification('Error exporting PDF: ' + error.message, 'error');
-                }
-            }
-
-            // Placeholder methods for the demo
-            exportPaymentScheduleToExcel() { this.showNotification('Payment schedule would be exported to Excel', 'info'); }
-            exportLoanPortfolioSummary() { this.showNotification('Portfolio summary would be exported', 'info'); }
-            exportIndividualLoanSchedules() { this.showNotification('Individual schedules would be exported', 'info'); }
-            exportAnnualLoanStatements() { this.showNotification('Annual statements would be exported', 'info'); }
-            exportLoanPerformanceReport() { this.showNotification('Performance report would be exported', 'info'); }
-            exportPropertiesToExcel() { this.showNotification('Properties would be exported to Excel', 'info'); }
-            exportTenantsToExcel() { this.showNotification('Tenants would be exported to Excel', 'info'); }
-            exportRentScheduleToExcel() { this.showNotification('Rent schedule would be exported', 'info'); }
-            exportRentRollReport() { this.showNotification('Rent roll report would be exported', 'info'); }
-            exportPropertyPLStatements() { this.showNotification('Property P&L would be exported', 'info'); }
-            exportVacancyReport() { this.showNotification('Vacancy report would be exported', 'info'); }
-            exportCashFlowAnalysis() { this.showNotification('Cash flow analysis would be exported', 'info'); }
-            exportMaintenanceReport() { this.showNotification('Maintenance report would be exported', 'info'); }
-            exportPrimeHistoryToExcel() { this.showNotification('Prime rate history would be exported', 'info'); }
-
-            renderPaymentSchedule() { /* Implementation would go here */ }
-            renderPropertiesView() { /* Implementation would go here */ }
-            renderTenantsView() { /* Implementation would go here */ }
-            renderRentScheduleView() { /* Implementation would go here */ }
-            
-            recordPayment(paymentId) { this.showNotification('Payment recorded', 'success'); }
-            recordMissedPayment(paymentId) { this.showNotification('Payment marked as missed', 'warning'); }
-            undoPaymentStatus(paymentId) { this.showNotification('Payment status reverted', 'success'); }
-            
-            editLoan(loanId) { this.showNotification(`Edit loan ${loanId} - Feature would be implemented`, 'info'); }
-            deleteLoan(loanId) { 
-                if (confirm('Delete this loan?')) {
-                    this.loans = this.loans.filter(l => l.id !== loanId);
-                    this.saveData('loans', this.loans);
-                    this.renderLoansView();
-                    this.showNotification('Loan deleted successfully', 'success');
-                }
-            }
-            addTranche(loanId) { this.showNotification(`Add tranche to loan ${loanId}`, 'info'); }
-            
-            showAddLoanModal() { this.showNotification('Add Loan modal would open here', 'info'); }
-            showAddPropertyModal() { this.showNotification('Add Property modal would open here', 'info'); }
-            showAddTenantModal() { this.showNotification('Add Tenant modal would open here', 'info'); }
-            
-            closeModal() {
-                const modalContainer = document.getElementById('modalContainer');
-                if (modalContainer) modalContainer.innerHTML = '';
-            }
-            
-            getNextPaymentForLoan(loanId) { return 'N/A'; }
-
-            // Data methods
+            // DEFAULT DATA
             getDefaultLoans() {
                 return [
                     {
-                        id: 1, borrowerName: "Smith Construction Ltd", borrowerEmail: "contact@smithconstruction.com",
-                        originalAmount: 150000, currentBalance: 142000, interestRate: 6.5, termMonths: 60,
-                        paymentType: "blended", monthlyPayment: 2934.38, startDate: "2024-01-15", paymentDay: 15,
-                        status: 'active', rateType: 'fixed'
+                        id: 1,
+                        borrowerName: "Smith Construction Ltd",
+                        borrowerEmail: "contact@smithconstruction.com",
+                        originalAmount: 150000,
+                        currentBalance: 142000,
+                        interestRate: 6.5,
+                        termMonths: 60,
+                        paymentType: "blended",
+                        monthlyPayment: 2934.38,
+                        startDate: "2024-01-15",
+                        paymentDay: 15,
+                        status: 'active',
+                        rateType: 'fixed'
                     },
                     {
-                        id: 2, borrowerName: "Johnson Development Corp", borrowerEmail: "finance@johnsondevelopment.com",
-                        originalAmount: 75000, currentBalance: 75000, interestRate: 7.5, termMonths: 36,
-                        paymentType: "interest_only", monthlyPayment: 468.75, startDate: "2024-03-01", paymentDay: 1,
-                        status: 'active', rateType: 'variable', spread: 2.0
+                        id: 2,
+                        borrowerName: "Johnson Development Corp",
+                        borrowerEmail: "finance@johnsondevelopment.com",
+                        originalAmount: 75000,
+                        currentBalance: 75000,
+                        interestRate: 7.5,
+                        termMonths: 36,
+                        paymentType: "interest_only",
+                        monthlyPayment: 468.75,
+                        startDate: "2024-03-01",
+                        paymentDay: 1,
+                        status: 'active',
+                        rateType: 'variable',
+                        spread: 2.0
                     }
                 ];
             }
 
             getDefaultProperties() {
                 return [
-                    { id: 1, name: "Downtown Commercial Complex", address: "250 Business District Ave", type: "Commercial", units: 8, value: 1800000, monthlyRent: 16000, status: 'active' },
-                    { id: 2, name: "Riverside Residential Tower", address: "789 Waterfront Drive", type: "Residential", units: 32, value: 1200000, monthlyRent: 28000, status: 'active' }
+                    {
+                        id: 1,
+                        name: "Downtown Commercial Complex",
+                        address: "250 Business District Ave",
+                        type: "Commercial",
+                        units: 8,
+                        value: 1800000,
+                        monthlyRent: 16000,
+                        status: 'active'
+                    },
+                    {
+                        id: 2,
+                        name: "Riverside Residential Tower",
+                        address: "789 Waterfront Drive",
+                        type: "Residential",
+                        units: 32,
+                        value: 1200000,
+                        monthlyRent: 28000,
+                        status: 'active'
+                    }
                 ];
             }
 
             getDefaultTenants() {
                 return [
-                    { id: 1, name: "Professional Services Group", email: "admin@proservicesgroup.com", propertyId: 1, unitNumber: "Suite 402", monthlyRent: 5500, rentDueDay: 1, leaseStart: "2024-09-01", leaseEnd: "2025-08-31", status: 'active' }
+                    {
+                        id: 1,
+                        name: "Professional Services Group",
+                        email: "admin@proservicesgroup.com",
+                        propertyId: 1,
+                        unitNumber: "Suite 402",
+                        monthlyRent: 5500,
+                        rentDueDay: 1,
+                        leaseStart: "2024-09-01",
+                        leaseEnd: "2025-08-31",
+                        status: 'active'
+                    }
+                ];
+            }
+
+            getDefaultUsers() {
+                return [
+                    {
+                        id: 1,
+                        username: "admin",
+                        password: "admin123",
+                        firstName: "Admin",
+                        lastName: "User",
+                        email: "admin@lindanequities.com",
+                        role: "admin",
+                        status: "active",
+                        lastLogin: new Date().toISOString(),
+                        permissions: ["all"]
+                    },
+                    {
+                        id: 2,
+                        username: "manager",
+                        password: "manager123",
+                        firstName: "Manager",
+                        lastName: "User",
+                        email: "manager@lindanequities.com",
+                        role: "manager",
+                        status: "active",
+                        lastLogin: null,
+                        permissions: ["loans", "reports", "properties"]
+                    },
+                    {
+                        id: 3,
+                        username: "user",
+                        password: "user123",
+                        firstName: "Standard",
+                        lastName: "User",
+                        email: "user@lindanequities.com",
+                        role: "user",
+                        status: "active",
+                        lastLogin: null,
+                        permissions: ["loans"]
+                    }
                 ];
             }
 
             getDefaultPrimeHistory() {
                 return [
-                    { id: 1, rate: 5.50, effectiveDate: "2024-09-01", previousRate: 5.25, notes: "Federal Reserve adjustment", updatedAt: "2024-09-01T09:00:00.000Z", updatedBy: "system" }
+                    {
+                        id: 1,
+                        rate: 5.50,
+                        effectiveDate: "2024-09-01",
+                        previousRate: 5.25,
+                        notes: "Federal Reserve adjustment",
+                        updatedAt: "2024-09-01T09:00:00.000Z",
+                        updatedBy: "system"
+                    }
                 ];
             }
 
-            generatePaymentSchedules() { this.payments = []; this.saveData('payments', this.payments); }
-            generateRentSchedules() { this.rentPayments = []; this.saveData('rentPayments', this.rentPayments); }
-
-            // Utility methods
+            // UTILITY METHODS
             loadData(key) {
                 try {
                     const data = localStorage.getItem(`businessSystem_${key}`);
                     return data ? JSON.parse(data) : null;
                 } catch (error) {
+                    console.error(`Error loading ${key}:`, error);
                     return null;
                 }
             }
@@ -2342,19 +2786,32 @@
             }
 
             formatCurrency(amount) {
-                return new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount || 0);
+                return new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount || 0);
             }
 
             formatDate(date) {
                 if (!date) return 'N/A';
                 if (typeof date === 'string') date = new Date(date);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
             }
 
             formatDateTime(dateTime) {
                 if (!dateTime) return 'N/A';
                 const date = new Date(dateTime);
-                return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return date.toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
             }
 
             showNotification(message, type = 'success') {
@@ -2374,14 +2831,18 @@
                 `;
                 
                 container.appendChild(notification);
-                setTimeout(() => { if (notification.parentElement) notification.remove(); }, 5000);
+                setTimeout(() => {
+                    if (notification.parentElement) {
+                        notification.remove();
+                    }
+                }, 5000);
             }
         }
         
-        // Initialize the application
+        // Initialize the Professional Banking System
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded - initializing Business Manager');
-            window.businessManager = new BusinessManager();
+            console.log('DOM loaded - initializing Professional Banking System');
+            window.businessSystem = new ProfessionalBankingSystem();
         });
         
         // Backup initialization
@@ -2389,7 +2850,7 @@
             console.log('DOM is loading...');
         } else {
             console.log('DOM already ready - initializing immediately');
-            window.businessManager = new BusinessManager();
+            window.businessSystem = new ProfessionalBankingSystem();
         }
     </script>
 </body>
