@@ -674,11 +674,11 @@
           <input id="password" class="form-control" type="password" value="admin123" required />
         </div>
         <button type="submit" class="btn btn-primary">Access System</button>
-      </form>
-
-      <div class="login-help">
+      </form>              <div class="login-help">
         <strong>Demo Credentials:</strong><br>
-        Username: admin | Password: admin123
+        Admin: admin / admin123 (Full Access)<br>
+        Loans: loansuser / loans123 (Loans Only)<br>
+        Real Estate: realestate / estate123 (Real Estate Only)
       </div>
     </div>
   </div>
@@ -940,9 +940,9 @@
         return principal * (numerator / denominator);
       }
 
-      static calculatePaymentForFrequency(principal, annualRate, years, frequency) {
+      static calculatePaymentForFrequency(principal, annualRate, months, frequency) {
         const paymentsPerYear = this.getPaymentsPerYear(frequency);
-        const numberOfPayments = years * paymentsPerYear;
+        const numberOfPayments = (months / 12) * paymentsPerYear;
         const periodRate = annualRate / paymentsPerYear;
         
         if (periodRate === 0) return principal / numberOfPayments;
@@ -1064,18 +1064,21 @@
         this.currentUser = null;
         this.currentMode = 'loan';
         this.currentView = 'dashboard';
+        this.syncInterval = null;
 
-        // Load data from storage
-        this.primeRate = parseFloat(localStorage.getItem('primeRate')) || 5.50;
-        this.primeRateHistory = JSON.parse(localStorage.getItem('primeRateHistory')) || [{ date: new Date().toISOString(), rate: 5.50 }];
-        this.loans = JSON.parse(localStorage.getItem('loans')) || [];
-        this.loanPayments = JSON.parse(localStorage.getItem('loanPayments')) || [];
-        this.amortizationSchedules = JSON.parse(localStorage.getItem('amortizationSchedules')) || {};
-        this.properties = JSON.parse(localStorage.getItem('properties')) || [];
-        this.tenants = JSON.parse(localStorage.getItem('tenants')) || [];
-        this.rentPayments = JSON.parse(localStorage.getItem('rentPayments')) || [];
-        this.users = JSON.parse(localStorage.getItem('users')) || [
-          { id: 1, username: 'admin', password: 'admin123', name: 'Administrator', role: 'admin' }
+        // Load data from storage - using global keys for shared data
+        this.primeRate = parseFloat(localStorage.getItem('lindan_primeRate')) || 5.50;
+        this.primeRateHistory = JSON.parse(localStorage.getItem('lindan_primeRateHistory')) || [{ date: new Date().toISOString(), rate: 5.50 }];
+        this.loans = JSON.parse(localStorage.getItem('lindan_loans')) || [];
+        this.loanPayments = JSON.parse(localStorage.getItem('lindan_loanPayments')) || [];
+        this.amortizationSchedules = JSON.parse(localStorage.getItem('lindan_amortizationSchedules')) || {};
+        this.properties = JSON.parse(localStorage.getItem('lindan_properties')) || [];
+        this.tenants = JSON.parse(localStorage.getItem('lindan_tenants')) || [];
+        this.rentPayments = JSON.parse(localStorage.getItem('lindan_rentPayments')) || [];
+        this.users = JSON.parse(localStorage.getItem('lindan_users')) || [
+          { id: 1, username: 'admin', password: 'admin123', name: 'Administrator', role: 'admin', accessLoans: true, accessRealEstate: true },
+          { id: 2, username: 'loansuser', password: 'loans123', name: 'Loans Manager', role: 'user', accessLoans: true, accessRealEstate: false },
+          { id: 3, username: 'realestate', password: 'estate123', name: 'Real Estate Manager', role: 'user', accessLoans: false, accessRealEstate: true }
         ];
 
         this.init();
@@ -1176,7 +1179,21 @@
           document.getElementById('loginScreen').classList.add('hidden');
           document.getElementById('mainApp').classList.remove('hidden');
           document.getElementById('userDisplay').textContent = `Welcome, ${user.name}`;
+          
+          // Filter mode selector based on permissions
+          const modeSelector = document.getElementById('appModeSelector');
+          if (!user.accessLoans && user.accessRealEstate) {
+            modeSelector.innerHTML = '<option value="realestate">Real Estate Management</option>';
+            this.currentMode = 'realestate';
+          } else if (user.accessLoans && !user.accessRealEstate) {
+            modeSelector.innerHTML = '<option value="loan">Loan Management</option>';
+            this.currentMode = 'loan';
+          }
+          
           this.initializeApp();
+          
+          // Start sync timer for multi-user updates
+          this.startSyncTimer();
         } else {
           errorDiv.textContent = 'Invalid username or password';
           errorDiv.classList.add('show');
@@ -1185,10 +1202,38 @@
 
       handleLogout() {
         this.currentUser = null;
+        if (this.syncInterval) clearInterval(this.syncInterval);
         document.getElementById('loginScreen').classList.remove('hidden');
         document.getElementById('mainApp').classList.add('hidden');
         document.getElementById('username').value = 'admin';
         document.getElementById('password').value = 'admin123';
+      }
+
+      startSyncTimer() {
+        // Check for data updates every 3 seconds for real-time multi-user sync
+        this.syncInterval = setInterval(() => {
+          const storedLoans = JSON.parse(localStorage.getItem('lindan_loans')) || [];
+          const storedProperties = JSON.parse(localStorage.getItem('lindan_properties')) || [];
+          
+          const loansChanged = JSON.stringify(this.loans) !== JSON.stringify(storedLoans);
+          const propertiesChanged = JSON.stringify(this.properties) !== JSON.stringify(storedProperties);
+          
+          if (loansChanged || propertiesChanged) {
+            this.loans = storedLoans;
+            this.properties = storedProperties;
+            this.amortizationSchedules = JSON.parse(localStorage.getItem('lindan_amortizationSchedules')) || {};
+            this.tenants = JSON.parse(localStorage.getItem('lindan_tenants')) || [];
+            this.rentPayments = JSON.parse(localStorage.getItem('lindan_rentPayments')) || [];
+            
+            // Refresh current view
+            if (this.currentView === 'loans') this.renderLoans();
+            if (this.currentView === 'payment-schedule') this.renderPaymentSchedule();
+            if (this.currentView === 'properties') this.renderProperties();
+            if (this.currentView === 'tenants') this.renderTenants();
+            if (this.currentView === 'rent-schedule') this.renderRentSchedule();
+            if (this.currentView === 'dashboard') this.renderDashboard();
+          }
+        }, 3000);
       }
 
       initializeApp() {
@@ -1200,20 +1245,27 @@
 
       // ===== NAVIGATION =====
       updateNavigation() {
-        const navItems = this.currentMode === 'loan' ? [
-          { view: 'dashboard', label: 'Dashboard' },
-          { view: 'loans', label: 'All Loans' },
-          { view: 'payment-schedule', label: 'Payment Schedule' },
-          { view: 'reports', label: 'Reports' },
-          { view: 'settings', label: 'Settings' }
-        ] : [
-          { view: 'dashboard', label: 'Dashboard' },
-          { view: 'properties', label: 'Properties' },
-          { view: 'tenants', label: 'Tenants' },
-          { view: 'rent-schedule', label: 'Rent Schedule' },
-          { view: 'reports', label: 'Reports' },
-          { view: 'settings', label: 'Settings' }
-        ];
+        const user = this.currentUser;
+        let navItems = [];
+        
+        if (this.currentMode === 'loan' && user.accessLoans) {
+          navItems = [
+            { view: 'dashboard', label: 'Dashboard' },
+            { view: 'loans', label: 'All Loans' },
+            { view: 'payment-schedule', label: 'Payment Schedule' },
+            { view: 'reports', label: 'Reports' },
+            { view: 'settings', label: 'Settings' }
+          ];
+        } else if (this.currentMode === 'realestate' && user.accessRealEstate) {
+          navItems = [
+            { view: 'dashboard', label: 'Dashboard' },
+            { view: 'properties', label: 'Properties' },
+            { view: 'tenants', label: 'Tenants' },
+            { view: 'rent-schedule', label: 'Rent Schedule' },
+            { view: 'reports', label: 'Reports' },
+            { view: 'settings', label: 'Settings' }
+          ];
+        }
 
         const sidebarNav = document.getElementById('sidebarNav');
         sidebarNav.innerHTML = navItems.map(item => `
@@ -1222,6 +1274,16 @@
       }
 
       switchMode(mode) {
+        // Check if user has access to requested mode
+        if (mode === 'loan' && !this.currentUser.accessLoans) {
+          this.notify('You do not have access to Loan Management', 'error');
+          return;
+        }
+        if (mode === 'realestate' && !this.currentUser.accessRealEstate) {
+          this.notify('You do not have access to Real Estate Management', 'error');
+          return;
+        }
+        
         this.currentMode = mode;
         this.updateNavigation();
         this.showView('dashboard');
@@ -1452,8 +1514,8 @@
               </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Loan Term (Years)</label>
-                  <input class="form-control" id="term" type="number" step="0.1" value="5" />
+                  <label class="form-label">Loan Term (Months)</label>
+                  <input class="form-control" id="term" type="number" step="1" value="60" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">Payment Frequency</label>
@@ -1492,17 +1554,17 @@
           const borrowerName = document.getElementById('borrowerName').value.trim();
           const principal = parseFloat(document.getElementById('principal').value);
           const annualRate = parseFloat(document.getElementById('annualRate').value) / 100;
-          const term = parseFloat(document.getElementById('term').value);
+          const termMonths = parseFloat(document.getElementById('term').value);
           const frequency = document.getElementById('frequency').value;
           const fundingDate = document.getElementById('fundingDate').value;
           const notes = document.getElementById('notes').value;
 
-          if (!borrowerName || !principal || !fundingDate) {
+          if (!borrowerName || !principal || !fundingDate || !termMonths) {
             this.notify('Please fill in all required fields', 'error');
             return;
           }
 
-          const monthlyPayment = LoanCalculationEngine.calculatePaymentForFrequency(principal, annualRate, term, frequency);
+          const monthlyPayment = LoanCalculationEngine.calculatePaymentForFrequency(principal, annualRate, termMonths, frequency);
 
           const loan = {
             id: Date.now(),
@@ -1510,12 +1572,13 @@
             principal,
             balance: principal,
             annualRate,
-            term,
+            termMonths: termMonths,
             frequency,
             fundingDate: new Date(fundingDate),
             monthlyPayment,
             notes,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            userId: this.currentUser.id
           };
 
           this.loans.push(loan);
@@ -1636,7 +1699,468 @@
               <td>$${property.value.toFixed(0)}</td>
               <td>${tenants.length}</td>
               <td>$${monthlyRent.toFixed(2)}</td>
-              <td><span class="badge badge-active">Active</span></td>
+              <td><span class="badge badge-active">active</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline btn-edit-property" data-id="${property.id}">Edit</button>
+                <button class="btn btn-sm btn-danger btn-delete-property" data-id="${property.id}">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (this.properties.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">No properties added yet. Click "Add Property" to get started.</td></tr>';
+        }
+      }
+
+      renderTenants() {
+        const tbody = document.getElementById('tenantsBody');
+        tbody.innerHTML = this.tenants.map(tenant => {
+          const property = this.properties.find(p => p.id === tenant.propertyId);
+          const leaseStart = new Date(tenant.leaseStart).toLocaleDateString();
+          const leaseEnd = new Date(tenant.leaseEnd).toLocaleDateString();
+
+          return `
+            <tr>
+              <td>${tenant.name}</td>
+              <td>${property?.address || 'N/A'}</td>
+              <td>${tenant.unit}</td>
+              <td>${leaseStart}</td>
+              <td>${leaseEnd}</td>
+              <td>$${tenant.rentAmount.toFixed(2)}</td>
+              <td><span class="badge badge-${tenant.status === 'active' ? 'active' : 'pending'}">${tenant.status}</span></td>
+              <td>
+                <button class="btn btn-sm btn-outline btn-edit-tenant" data-id="${tenant.id}">Edit</button>
+                <button class="btn btn-sm btn-danger btn-delete-tenant" data-id="${tenant.id}">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (this.tenants.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No tenants added yet. Click "Add Tenant" to get started.</td></tr>';
+        }
+      }
+
+      renderRentSchedule() {
+        const tbody = document.getElementById('rentScheduleBody');
+        const propertyFilter = document.getElementById('propertyFilterDropdown').value;
+
+        let rentPaymentsList = [];
+
+        // Generate upcoming rent payments for all active tenants
+        this.tenants.forEach(tenant => {
+          if (propertyFilter && tenant.propertyId !== parseInt(propertyFilter)) return;
+
+          const property = this.properties.find(p => p.id === tenant.propertyId);
+          const today = new Date();
+          const leaseEnd = new Date(tenant.leaseEnd);
+
+          // Generate next 12 months of rent payments
+          for (let i = 0; i < 12; i++) {
+            const paymentDate = new Date(today);
+            paymentDate.setMonth(paymentDate.getMonth() + i);
+            paymentDate.setDate(1); // Rent due on first of month
+
+            if (paymentDate <= leaseEnd && tenant.status === 'active') {
+              const isOverdue = paymentDate < today;
+              const paymentRecord = this.rentPayments.find(p => 
+                p.tenantId === tenant.id && 
+                new Date(p.dueDate).toDateString() === paymentDate.toDateString()
+              );
+
+              rentPaymentsList.push({
+                id: `${tenant.id}-${paymentDate.getTime()}`,
+                tenantId: tenant.id,
+                tenantName: tenant.name,
+                propertyId: property?.id,
+                propertyAddress: property?.address || 'N/A',
+                amount: tenant.rentAmount,
+                dueDate: paymentDate,
+                status: paymentRecord?.status || (isOverdue ? 'overdue' : 'upcoming'),
+                recorded: !!paymentRecord
+              });
+            }
+          }
+        });
+
+        // Sort by date
+        rentPaymentsList.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+        tbody.innerHTML = rentPaymentsList.map(payment => {
+          return `
+            <tr>
+              <td>${payment.dueDate.toLocaleDateString()}</td>
+              <td>${payment.tenantName}</td>
+              <td>${payment.propertyAddress}</td>
+              <td>$${payment.amount.toFixed(2)}</td>
+              <td><span class="badge badge-${payment.status}">${payment.status}</span></td>
+              <td>
+                ${!payment.recorded ? `<button class="btn btn-sm btn-success btn-record-rent" data-id="${payment.id}">Record</button>` : '<span style="color: var(--text-light);">Recorded</span>'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        if (rentPaymentsList.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No rent payments scheduled.</td></tr>';
+        }
+      }
+
+      recordRentPayment(rentPaymentId) {
+        const [tenantId, timestamp] = rentPaymentId.split('-');
+        const tenant = this.tenants.find(t => t.id === parseInt(tenantId));
+        
+        if (!tenant) return;
+
+        const dueDate = new Date(parseInt(timestamp));
+
+        const rentPaymentRecord = {
+          id: Date.now(),
+          tenantId: parseInt(tenantId),
+          tenantName: tenant.name,
+          amount: tenant.rentAmount,
+          dueDate: dueDate.toISOString(),
+          dateRecorded: new Date().toISOString(),
+          status: 'paid'
+        };
+
+        this.rentPayments.push(rentPaymentRecord);
+        this.saveToStorage();
+        this.renderRentSchedule();
+        this.notify(`Rent payment of $${rentPaymentRecord.amount.toFixed(2)} recorded for ${tenant.name}`, 'success');
+      }
+
+      showAddPropertyModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add New Property</h2>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Property Address</label>
+                <input class="form-control" id="address" type="text" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Property Type</label>
+                  <select class="form-control" id="propertyType">
+                    <option value="residential">Residential</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="industrial">Industrial</option>
+                    <option value="mixed">Mixed-Use</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Property Value ($)</label>
+                  <input class="form-control" id="propertyValue" type="number" step="0.01" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="propertyNotes"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+              <button class="btn btn-primary" id="savePropertyBtn">Add Property</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('modalContainer').appendChild(modal);
+
+        document.getElementById('savePropertyBtn').addEventListener('click', () => {
+          const address = document.getElementById('address').value.trim();
+          const type = document.getElementById('propertyType').value;
+          const value = parseFloat(document.getElementById('propertyValue').value);
+          const notes = document.getElementById('propertyNotes').value;
+
+          if (!address || !value) {
+            this.notify('Please fill in all required fields', 'error');
+            return;
+          }
+
+          const property = {
+            id: Date.now(),
+            address,
+            type,
+            value,
+            notes,
+            createdAt: new Date().toISOString()
+          };
+
+          this.properties.push(property);
+          this.saveToStorage();
+          modal.remove();
+          this.renderProperties();
+          this.populateFilters();
+          this.renderDashboard();
+          this.notify(`Property at ${address} added successfully`, 'success');
+        });
+      }
+
+      editProperty(propertyId) {
+        const property = this.properties.find(p => p.id === propertyId);
+        if (!property) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Edit Property</h2>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Property Address</label>
+                <input class="form-control" id="address" type="text" value="${property.address}" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Property Type</label>
+                  <select class="form-control" id="propertyType">
+                    <option value="residential" ${property.type === 'residential' ? 'selected' : ''}>Residential</option>
+                    <option value="commercial" ${property.type === 'commercial' ? 'selected' : ''}>Commercial</option>
+                    <option value="industrial" ${property.type === 'industrial' ? 'selected' : ''}>Industrial</option>
+                    <option value="mixed" ${property.type === 'mixed' ? 'selected' : ''}>Mixed-Use</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Property Value ($)</label>
+                  <input class="form-control" id="propertyValue" type="number" step="0.01" value="${property.value}" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea class="form-control" id="propertyNotes">${property.notes || ''}</textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+              <button class="btn btn-primary" id="updatePropertyBtn">Update</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('modalContainer').appendChild(modal);
+
+        document.getElementById('updatePropertyBtn').addEventListener('click', () => {
+          property.address = document.getElementById('address').value.trim();
+          property.type = document.getElementById('propertyType').value;
+          property.value = parseFloat(document.getElementById('propertyValue').value);
+          property.notes = document.getElementById('propertyNotes').value;
+
+          this.saveToStorage();
+          modal.remove();
+          this.renderProperties();
+          this.notify('Property updated successfully', 'success');
+        });
+      }
+
+      deleteProperty(propertyId) {
+        if (confirm('Are you sure you want to delete this property? Associated tenants will also be deleted. This action cannot be undone.')) {
+          const propertyIndex = this.properties.findIndex(p => p.id === propertyId);
+          if (propertyIndex > -1) {
+            const propertyAddress = this.properties[propertyIndex].address;
+            this.properties.splice(propertyIndex, 1);
+            this.tenants = this.tenants.filter(t => t.propertyId !== propertyId);
+            this.rentPayments = this.rentPayments.filter(p => !this.tenants.find(t => t.id === p.tenantId));
+            this.saveToStorage();
+            this.renderProperties();
+            this.renderTenants();
+            this.renderRentSchedule();
+            this.populateFilters();
+            this.renderDashboard();
+            this.notify(`Property at ${propertyAddress} deleted`, 'success');
+          }
+        }
+      }
+
+      showAddTenantModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Add New Tenant</h2>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Tenant Name</label>
+                <input class="form-control" id="tenantName" type="text" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Property</label>
+                  <select class="form-control" id="propertySelect">
+                    <option value="">Select a property...</option>
+                    ${this.properties.map(p => `<option value="${p.id}">${p.address}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Unit</label>
+                  <input class="form-control" id="unit" type="text" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Lease Start Date</label>
+                  <input class="form-control" id="leaseStart" type="date" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lease End Date</label>
+                  <input class="form-control" id="leaseEnd" type="date" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Monthly Rent ($)</label>
+                <input class="form-control" id="rentAmount" type="number" step="0.01" />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+              <button class="btn btn-primary" id="saveTenantBtn">Add Tenant</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('modalContainer').appendChild(modal);
+
+        document.getElementById('saveTenantBtn').addEventListener('click', () => {
+          const name = document.getElementById('tenantName').value.trim();
+          const propertyId = parseInt(document.getElementById('propertySelect').value);
+          const unit = document.getElementById('unit').value.trim();
+          const leaseStart = document.getElementById('leaseStart').value;
+          const leaseEnd = document.getElementById('leaseEnd').value;
+          const rentAmount = parseFloat(document.getElementById('rentAmount').value);
+
+          if (!name || !propertyId || !unit || !leaseStart || !leaseEnd || !rentAmount) {
+            this.notify('Please fill in all required fields', 'error');
+            return;
+          }
+
+          const tenant = {
+            id: Date.now(),
+            name,
+            propertyId,
+            unit,
+            leaseStart: new Date(leaseStart),
+            leaseEnd: new Date(leaseEnd),
+            rentAmount,
+            status: 'active',
+            createdAt: new Date().toISOString()
+          };
+
+          this.tenants.push(tenant);
+          this.saveToStorage();
+          modal.remove();
+          this.renderTenants();
+          this.renderRentSchedule();
+          this.populateFilters();
+          this.renderDashboard();
+          this.notify(`Tenant ${name} added successfully`, 'success');
+        });
+      }
+
+      editTenant(tenantId) {
+        const tenant = this.tenants.find(t => t.id === tenantId);
+        if (!tenant) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Edit Tenant</h2>
+              <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label class="form-label">Tenant Name</label>
+                <input class="form-control" id="tenantName" type="text" value="${tenant.name}" />
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Property</label>
+                  <select class="form-control" id="propertySelect">
+                    ${this.properties.map(p => `<option value="${p.id}" ${p.id === tenant.propertyId ? 'selected' : ''}>${p.address}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Unit</label>
+                  <input class="form-control" id="unit" type="text" value="${tenant.unit}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Lease Start Date</label>
+                  <input class="form-control" id="leaseStart" type="date" value="${tenant.leaseStart instanceof Date ? tenant.leaseStart.toISOString().split('T')[0] : new Date(tenant.leaseStart).toISOString().split('T')[0]}" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lease End Date</label>
+                  <input class="form-control" id="leaseEnd" type="date" value="${tenant.leaseEnd instanceof Date ? tenant.leaseEnd.toISOString().split('T')[0] : new Date(tenant.leaseEnd).toISOString().split('T')[0]}" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Monthly Rent ($)</label>
+                <input class="form-control" id="rentAmount" type="number" step="0.01" value="${tenant.rentAmount}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Status</label>
+                <select class="form-control" id="tenantStatus">
+                  <option value="active" ${tenant.status === 'active' ? 'selected' : ''}>Active</option>
+                  <option value="inactive" ${tenant.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cancel</button>
+              <button class="btn btn-primary" id="updateTenantBtn">Update</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('modalContainer').appendChild(modal);
+
+        document.getElementById('updateTenantBtn').addEventListener('click', () => {
+          tenant.name = document.getElementById('tenantName').value.trim();
+          tenant.propertyId = parseInt(document.getElementById('propertySelect').value);
+          tenant.unit = document.getElementById('unit').value.trim();
+          tenant.leaseStart = new Date(document.getElementById('leaseStart').value);
+          tenant.leaseEnd = new Date(document.getElementById('leaseEnd').value);
+          tenant.rentAmount = parseFloat(document.getElementById('rentAmount').value);
+          tenant.status = document.getElementById('tenantStatus').value;
+
+          this.saveToStorage();
+          modal.remove();
+          this.renderTenants();
+          this.renderRentSchedule();
+          this.notify('Tenant updated successfully', 'success');
+        });
+      }
+
+      deleteTenant(tenantId) {
+        if (confirm('Are you sure you want to delete this tenant? This action cannot be undone.')) {
+          const tenantIndex = this.tenants.findIndex(t => t.id === tenantId);
+          if (tenantIndex > -1) {
+            const tenantName = this.tenants[tenantIndex].name;
+            this.tenants.splice(tenantIndex, 1);
+            this.rentPayments = this.rentPayments.filter(p => p.tenantId !== tenantId);
+            this.saveToStorage();
+            this.renderTenants();
+            this.renderRentSchedule();
+            this.renderDashboard();
+            this.notify(`Tenant ${tenantName} deleted`, 'success');
+          }
+        }
+      }s="badge badge-active">Active</span></td>
               <td>
                 <button class="btn btn-sm btn-outline btn-edit-property" data-id="${property.id}">Edit</button>
                 <button class="btn btn-sm btn-danger btn-delete-property" data-id="${property.id}">Delete</button>
@@ -2324,14 +2848,16 @@
 
       // ===== STORAGE =====
       saveToStorage() {
-        localStorage.setItem('primeRate', this.primeRate.toString());
-        localStorage.setItem('primeRateHistory', JSON.stringify(this.primeRateHistory));
-        localStorage.setItem('loans', JSON.stringify(this.loans));
-        localStorage.setItem('loanPayments', JSON.stringify(this.loanPayments));
-        localStorage.setItem('amortizationSchedules', JSON.stringify(this.amortizationSchedules));
-        localStorage.setItem('properties', JSON.stringify(this.properties));
-        localStorage.setItem('tenants', JSON.stringify(this.tenants));
-        localStorage.setItem('rentPayments', JSON.stringify(this.rentPayments));
+        // Use global keys so all users see the same data
+        localStorage.setItem('lindan_primeRate', this.primeRate.toString());
+        localStorage.setItem('lindan_primeRateHistory', JSON.stringify(this.primeRateHistory));
+        localStorage.setItem('lindan_loans', JSON.stringify(this.loans));
+        localStorage.setItem('lindan_loanPayments', JSON.stringify(this.loanPayments));
+        localStorage.setItem('lindan_amortizationSchedules', JSON.stringify(this.amortizationSchedules));
+        localStorage.setItem('lindan_properties', JSON.stringify(this.properties));
+        localStorage.setItem('lindan_tenants', JSON.stringify(this.tenants));
+        localStorage.setItem('lindan_rentPayments', JSON.stringify(this.rentPayments));
+        localStorage.setItem('lindan_users', JSON.stringify(this.users));
       }
 
       // ===== NOTIFICATIONS =====
