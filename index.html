@@ -599,6 +599,7 @@ td:first-child{color:var(--text);font-weight:500;}
           <div class="fg"><div class="fl">Email</div><input class="fi" id="fl-email" type="email" placeholder="contact@company.com"></div>
           <div class="fg"><div class="fl">Phone</div><input class="fi" id="fl-phone" placeholder="+1 (780) 000-0000"></div>
           <div class="fg"><div class="fl">Status</div><select class="fs" id="fl-status"><option value="active">Active</option><option value="pending">Pending</option><option value="closed">Closed</option></select></div>
+          <div class="fg"><div class="fl">Change Effective Date</div><input class="fi" id="fl-effective" type="date"><div style="font-size:.63rem;color:var(--text2);margin-top:3px">Leave blank = apply immediately</div></div>
           <div class="fg ff"><div class="fl">Collateral</div><input class="fi" id="fl-col" placeholder="Property address, equipment description, etc."></div>
           <div class="fg ff"><div class="fl">Notes</div><textarea class="fta" id="fl-notes" placeholder="Loan purpose, covenants, special terms..."></textarea></div>
         </div>
@@ -1412,14 +1413,19 @@ function resetLoanForm(){
   document.getElementById('fl-pd').value='1'; document.getElementById('fl-lf').value='0';
   document.getElementById('fl-gp').value='5'; document.getElementById('fl-balloon').value='';
   document.getElementById('lPreviewBox').style.display='none';
+  if(document.getElementById('fl-effective')) document.getElementById('fl-effective').value='';
   updatePayDesc(); renderTrancheMgr();
   lmTab('info',document.querySelector('#lmTabs .tab'));
 }
 function lmTab(name,el){
-  document.querySelectorAll('.tab-c').forEach(t=>t.style.display='none');
-  document.getElementById('lmt-'+name).style.display='';
+  ['info','terms','payment','tranches'].forEach(t=>{
+    const tc=document.getElementById('lmt-'+t);
+    if(tc) tc.style.display='none';
+  });
+  const target=document.getElementById('lmt-'+name);
+  if(target) target.style.display='';
   document.querySelectorAll('#lmTabs .tab').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');
+  if(el) el.classList.add('active');
   if(name==='tranches') renderTrancheMgr();
 }
 function toggleRateType(){
@@ -1505,8 +1511,21 @@ function saveLoan(){
   };
   if(editLoanId){
     const idx=loans.findIndex(l=>l.id===editLoanId);
-    if(idx>=0){loan.payments=loans[idx].payments||[];loan.createdAt=loans[idx].createdAt;loans[idx]=loan;}
-    log(`✏️ Updated: ${borrower}`,'edit'); toast('Loan updated','success');
+    if(idx>=0){
+      loan.payments=loans[idx].payments||[];
+      loan.createdAt=loans[idx].createdAt;
+      loan.amendments=loans[idx].amendments||[];
+      const effDate=document.getElementById('fl-effective').value;
+      if(effDate){
+        loan.effectiveDate=effDate;
+        loan.amendments.push({date:effDate,note:'Terms amended',rate:loan.rate,spread:loan.spread,ptype:loan.ptype,freq:loan.freq});
+      } else {
+        loan.effectiveDate=today();
+      }
+      loans[idx]=loan;
+    }
+    log(`✏️ Updated: ${borrower}${document.getElementById('fl-effective').value?' — effective '+fdt(document.getElementById('fl-effective').value):''}`,'edit');
+    toast('Loan updated','success');
   } else {
     loans.push(loan); log(`➕ New loan: ${borrower} — ${$c(amount)}`,'add'); toast(`Loan created: ${borrower}`,'success');
   }
@@ -1557,11 +1576,18 @@ function submitMissed(){
   if(!payCtx)return;
   const loan=loans.find(l=>l.id===payCtx.id); if(!loan)return;
   if(!loan.payments)loan.payments=[];
-  loan.payments[payCtx.idx]={status:'missed',paidDate:null,paidAmount:0};
-  save(); log(`⚠️ Missed #${payCtx.idx+1}: ${loan.borrower}`,'payment');
-  toast('Marked as missed','warning'); closeMod('payMod');
+  const{rows}=buildSchedule(loan);
+  const row=rows[payCtx.idx];
+  const capInt=row?row.interest:0;
+  loan.payments[payCtx.idx]={status:'missed',paidDate:null,paidAmount:0,capitalizedInterest:capInt};
+  loan.amount=(loan.amount||0)+capInt;
+  save();
+  log(`⚠️ Missed #${payCtx.idx+1}: ${loan.borrower} — ${$c(capInt)} capitalized into principal`,'payment');
+  toast(`Missed — ${$c(capInt)} interest added to principal`,'warning');
+  closeMod('payMod');
   renderLoanDash(); updateAlertBadge();
   if(curView==='ls')renderSched();
+  if(curView==='lp')renderPort();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1633,6 +1659,8 @@ function fillLoanForm(l){
   document.getElementById('fl-balloon').value=l.balloon||'';
   tempTranches=[...(l.tranches||[])];
   toggleRateType(); updatePayDesc(); lPreview();
+  document.getElementById('fl-effective').value='';
+  lmTab('info', document.querySelector('#lmTabs .tab'));
 }
 
 // ════════════════════════════════════════════════════════════════
