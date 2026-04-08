@@ -2012,7 +2012,7 @@ function stBadge(st){const m={active:['b-green','● Active'],overdue:['b-red','
 function priBadge(p){const m={emergency:['b-red','🚨 Emergency'],high:['b-red','High'],medium:['b-amber','Medium'],low:['b-gray','Low']};const[c,l]=m[p]||['b-gray',p];return`<span class="badge ${c}">${l}</span>`;}
 function msBadge(s){const m={open:['b-red','Open'],'in-progress':['b-amber','In Progress'],completed:['b-green','Done']};const[c,l]=m[s]||['b-gray',s];return`<span class="badge ${c}">${l}</span>`;}
 function propName(id){return props.find(p=>p.id===id)?.name||'Unknown';}
-function leaseDesc(t){const m={Gross:'Landlord pays all operating costs. Tenant pays flat rent.',Net:'Tenant pays rent + property taxes.',NN:'Tenant pays rent, taxes, and building insurance.',NNN:'Tenant pays all costs: rent, taxes, insurance, and maintenance.',Modified Gross:'Expenses split between landlord and tenant as negotiated.',Percentage:'Base rent plus a % of tenant gross sales above a threshold.'};return m[t]||'';}
+function leaseDesc(t){const m={'Gross':'Landlord pays all operating costs. Tenant pays flat rent.','Net':'Tenant pays rent + property taxes.','NN':'Tenant pays rent, taxes, and building insurance.','NNN':'Tenant pays all costs: rent, taxes, insurance, and maintenance.','Modified Gross':'Expenses split between landlord and tenant as negotiated.','Percentage':'Base rent plus a % of tenant gross sales above a threshold.'};return m[t]||'';}
 
 // ════════════════════════════════════════════════════════════════
 //  ACTIVITY LOG
