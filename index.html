@@ -681,6 +681,29 @@ td:first-child{color:var(--text);font-weight:500;}
   </div>
 </div>
 
+<!-- PRINCIPAL PAYMENT MODAL -->
+<div class="mbg" id="princMod">
+  <div class="modal" style="width:420px">
+    <div class="mh"><div class="mt">Additional Principal Payment</div><button class="mc" onclick="closeMod('princMod')">×</button></div>
+    <div class="mb">
+      <div class="al al-i" style="margin-bottom:16px;font-size:.74rem">Recording a principal payment reduces the outstanding balance directly. This does not affect the regular payment schedule.</div>
+      <div class="fgrid">
+        <div class="fg ff"><div class="fl">Loan</div><div id="pp-loanname" style="font-weight:600;color:var(--text);padding:8px 0"></div></div>
+        <div class="fg ff"><div class="fl">Current Balance</div><div id="pp-balance" style="font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:700;color:var(--green);padding:8px 0"></div></div>
+        <div class="fg ff"><div class="fl">Payment Date *</div><input class="fi" type="date" id="pp-date"></div>
+        <div class="fg ff"><div class="fl">Principal Amount ($) *</div><input class="fi mono" type="number" id="pp-amt" placeholder="Enter amount"></div>
+        <div class="fg"><div class="fl">Method</div><select class="fs" id="pp-meth"><option>EFT/Wire</option><option>Cheque</option><option>Bank Draft</option><option>Cash</option></select></div>
+        <div class="fg"><div class="fl">Reference #</div><input class="fi" id="pp-ref" placeholder="Txn ref..."></div>
+        <div class="fg ff"><div class="fl">Note</div><input class="fi" id="pp-note" placeholder="e.g. Lump sum prepayment"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeMod('princMod')">Cancel</button>
+      <button class="btn btn-green" onclick="savePrincipalPayment()">✓ Apply Principal Payment</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD PROPERTY MODAL -->
 <div class="mbg" id="propMod">
   <div class="modal mw">
@@ -1305,11 +1328,10 @@ function renderSched(){
   const firstPending=rows.find(r=>r.status==='pending');
 
   body.innerHTML=displayRows.map(row=>{
-    const isNext=firstPending&&row.num===firstPending.num;
     const isOvr=row.status==='pending'&&row.dueDate<td;
     const cls=row.status==='paid'?'paid':isOvr?'overdue':isNext?'next':'';
-    const action=row.status==='paid'?`<span class="badge b-green">✓ Paid</span>`
-      :row.status==='missed'?`<span class="badge b-red">Missed</span>`
+    const action=row.status==='paid'?`<span class="badge b-green">✓ Paid</span> <button class="btn btn-ghost btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="font-size:.6rem">Reverse</button>`
+      :row.status==='missed'?`<span class="badge b-red">Missed</span> <button class="btn btn-amber btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="background:var(--amber-d);color:var(--amber);border:1px solid rgba(243,156,18,.2);padding:3px 8px;font-size:.67rem;border-radius:7px;cursor:pointer;font-weight:600">Reverse</button>`
       :loan.ptype==='accrual'?`<span class="badge b-blue" style="font-size:.55rem">Accruing</span>`
       :`<button class="btn btn-green btn-xs" onclick="openPayRow('${id}',${row.num-1})">Pay</button>`;
     const displayInt = row.interest;
@@ -1420,10 +1442,10 @@ function resetLoanForm(){
 function lmTab(name,el){
   ['info','terms','payment','tranches'].forEach(t=>{
     const tc=document.getElementById('lmt-'+t);
-    if(tc) tc.style.display='none';
+    if(tc){tc.style.display='none';tc.classList.remove('active');}
   });
   const target=document.getElementById('lmt-'+name);
-  if(target) target.style.display='';
+  if(target){target.style.display='';target.classList.add('active');}
   document.querySelectorAll('#lmTabs .tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   if(name==='tranches') renderTrancheMgr();
@@ -1589,6 +1611,22 @@ function submitMissed(){
   if(curView==='ls')renderSched();
   if(curView==='lp')renderPort();
 }
+  function reverseMissed(id,idx){
+  const loan=loans.find(l=>l.id===id); if(!loan)return;
+  const rec=loan.payments?.[idx]; if(!rec)return;
+  const wasCapitalized=rec.capitalizedInterest||0;
+  if(wasCapitalized>0){
+    loan.amount=Math.max(0,(loan.amount||0)-wasCapitalized);
+    toast(`Reversed — ${$c(wasCapitalized)} removed from principal`,'info');
+  }
+  loan.payments[idx]={status:'pending',paidDate:null,paidAmount:0};
+  save();
+  log(`↩️ Reversed missed payment #${idx+1}: ${loan.borrower}`,'payment');
+  renderLoanDash(); updateAlertBadge();
+  if(curView==='ls')renderSched();
+  if(curView==='lp')renderPort();
+  if(curView==='ld')openLoanPanel(id);
+}
 
 // ════════════════════════════════════════════════════════════════
 //  LOAN PANEL
@@ -1620,10 +1658,41 @@ function openLoanPanel(id){
     ${rows.filter(r=>r.status==='paid'||r.status==='missed').slice(-5).map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:.74rem"><div><span style="font-weight:500">#${r.num}</span><span style="color:var(--text3);margin-left:8px;font-size:.63rem">${fdt(r.paidDate||r.dueDate)}</span></div><div style="display:flex;gap:7px;align-items:center"><span class="mono">${r.status==='paid'?$c(r.paidAmount||r.payment):'—'}</span>${r.status==='paid'?'<span class="badge b-green">Paid</span>':'<span class="badge b-red">Missed</span>'}</div></div>`).join('')||'<div style="color:var(--text3);font-size:.72rem;padding:8px 0">No history yet</div>'}
     <div style="display:flex;gap:7px;margin-top:16px;flex-wrap:wrap">
       <button class="btn btn-green" style="flex:1" onclick="openPayForLoan('${loan.id}')">Record Payment</button>
+      <button class="btn btn-gold btn-sm" onclick="openPrincipalModal('${loan.id}')">+ Principal</button>
       <button class="btn btn-ghost btn-sm" onclick="viewSched('${loan.id}')">Schedule</button>
       <button class="btn btn-danger btn-sm" onclick="delLoan('${loan.id}')">Delete</button>
     </div>`;
   openPanel();
+}
+function openPrincipalModal(id){
+  const loan=loans.find(l=>l.id===id); if(!loan)return;
+  document.getElementById('pp-loanname').textContent=loan.borrower+' ('+loan.id+')';
+  document.getElementById('pp-balance').textContent=$c(loanBal(loan));
+  document.getElementById('pp-date').value=today();
+  document.getElementById('pp-amt').value='';
+  document.getElementById('pp-ref').value='';
+  document.getElementById('pp-note').value='';
+  document.getElementById('princMod').dataset.loanId=id;
+  openMod('princMod');
+}
+function savePrincipalPayment(){
+  const id=document.getElementById('princMod').dataset.loanId;
+  const loan=loans.find(l=>l.id===id); if(!loan)return;
+  const amt=parseFloat(document.getElementById('pp-amt').value);
+  const date=document.getElementById('pp-date').value;
+  if(!amt||amt<=0){toast('Enter a valid amount','error');return;}
+  if(!date){toast('Date required','error');return;}
+  if(!loan.principalPayments) loan.principalPayments=[];
+  loan.principalPayments.push({date,amount:amt,method:document.getElementById('pp-meth').value,ref:document.getElementById('pp-ref').value,note:document.getElementById('pp-note').value});
+  loan.amount=Math.max(0,(loan.amount||0)-amt);
+  save();
+  log(`💵 Principal payment: ${loan.borrower} — ${$c(amt)}`,'payment');
+  toast(`${$c(amt)} applied to principal. New balance: ${$c(loanBal(loan))}`,'success');
+  closeMod('princMod');
+  renderLoanDash(); updateAlertBadge();
+  if(curView==='ls')renderSched();
+  if(curView==='lp')renderPort();
+  openLoanPanel(id);
 }
 function viewSched(id){closePanel();sv('ls',document.getElementById('ni-ls'));setTimeout(()=>{document.getElementById('ssel').value=id;renderSched();},50);}
 function delLoan(id){if(!confirm('Delete this loan and all history?'))return;const l=loans.find(x=>x.id===id);loans=loans.filter(x=>x.id!==id);save();log(`🗑️ Deleted: ${l?.borrower}`,'delete');toast('Loan deleted','info');closePanel();renderLoanDash();updateAlertBadge();if(curView==='lp')renderPort();}
@@ -1659,7 +1728,6 @@ function fillLoanForm(l){
   document.getElementById('fl-balloon').value=l.balloon||'';
   tempTranches=[...(l.tranches||[])];
   toggleRateType(); updatePayDesc(); lPreview();
-  document.getElementById('fl-effective').value='';
   lmTab('info', document.querySelector('#lmTabs .tab'));
 }
 
