@@ -495,6 +495,26 @@ td:first-child{color:var(--text);font-weight:500;}
   </div>
 </div>
 
+<!-- DRAW MODAL — post-setup money sent out -->
+<div class="mbg" id="drawMod">
+  <div class="modal" style="width:440px">
+    <div class="mh"><div class="mt">Record Draw / Advance</div><button class="mc" onclick="closeMod('drawMod')">×</button></div>
+    <div class="mb">
+      <div class="al al-i" style="margin-bottom:14px;font-size:.73rem">Records money sent out to the borrower after loan setup. The draw is added to the outstanding balance from the draw date forward and interest accrues on the new higher balance.</div>
+      <div class="fgrid">
+        <div class="fg ff"><div class="fl">Loan</div><div id="dr-loanname" style="font-weight:600;color:var(--text);padding:7px 0"></div></div>
+        <div class="fg ff"><div class="fl">Current Balance</div><div id="dr-balance" style="font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:700;color:var(--blue);padding:7px 0"></div></div>
+        <div class="fg ff"><div class="fl">Draw Date *</div><input class="fi" type="date" id="dr-date"></div>
+        <div class="fg ff"><div class="fl">Draw Amount ($) *</div><input class="fi mono" type="number" id="dr-amt" placeholder="Enter amount"></div>
+        <div class="fg"><div class="fl">Method</div><select class="fs" id="dr-meth"><option>EFT/Wire</option><option>Cheque</option><option>Bank Draft</option><option>Cash</option></select></div>
+        <div class="fg"><div class="fl">Reference #</div><input class="fi" id="dr-ref"></div>
+        <div class="fg ff"><div class="fl">Label / Note</div><input class="fi" id="dr-note" placeholder="e.g. Construction draw 2, Equipment purchase..."></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-ghost" onclick="closeMod('drawMod')">Cancel</button><button class="btn btn-blue" onclick="saveDraw()">+ Add Draw to Balance</button></div>
+  </div>
+</div>
+
 <!-- PRINCIPAL PAYMENT MODAL -->
 <div class="mbg" id="princMod">
   <div class="modal" style="width:420px">
@@ -780,119 +800,188 @@ function calcInterest(principal,annualRate,fromDate,toDate,dc){
 // ═══════════════════════════════════════════════
 //  TRANCHE & PRINCIPAL PAYMENTS
 // ═══════════════════════════════════════════════
-function drawnAt(loan,date){
-  if(!loan.tranches||!loan.tranches.length)return loan.amount||0;
-  const drawn=loan.tranches.filter(t=>t.date<=date).reduce((s,t)=>s+(t.amount||0),0);
-  return Math.min(drawn,loan.amount||0);
+// All draws: tranches (upfront) + draws (post-setup)
+function allLoanDraws(loan){
+  return [...(loan.tranches||[]),...(loan.draws||[])].sort((a,b)=>a.date.localeCompare(b.date));
 }
 function totalDrawn(loan){
-  if(!loan.tranches||!loan.tranches.length)return loan.amount||0;
-  return Math.min(loan.tranches.reduce((s,t)=>s+(t.amount||0),0),loan.amount||0);
-}
-// Principal prepayments reduce balance from their date onward
-function principalPaidBy(loan,date){
-  if(!loan.principalPayments||!loan.principalPayments.length)return 0;
-  return loan.principalPayments.filter(p=>p.date<=date).reduce((s,p)=>s+(p.amount||0),0);
+  const draws=allLoanDraws(loan);
+  if(!draws.length)return loan.amount||0;
+  return draws.reduce((s,d)=>s+(d.amount||0),0);
 }
 
 // ═══════════════════════════════════════════════
 //  AMORTIZATION ENGINE — bank-grade Actual/365
+//  Sub-period splits at every event (draws,
+//  prepayments, prime rate changes) for
+//  day-accurate interest across all periods.
 // ═══════════════════════════════════════════════
 const PPY={monthly:12,weekly:52,biweekly:26,semimonthly:24,quarterly:4,semiannual:2,annual:1};
 
 function buildSchedule(loan){
-  if(!loan||!loan.startDate)return{rows:[],trancheRows:[],allRows:[]};
+  if(!loan||!loan.startDate)return{rows:[],eventRows:[]};
   const termMonths=loan.termUnit==='years'?(loan.term||0)*12:(loan.term||0);
-  if(termMonths<=0)return{rows:[],trancheRows:[],allRows:[]};
+  if(termMonths<=0)return{rows:[],eventRows:[]};
   const freq=loan.freq||'monthly';
   const ppy=PPY[freq]||12;
   const n=Math.max(1,Math.round(termMonths/12*ppy));
   const payDay=parseInt(loan.payday)||1;
   const startDate=loan.startDate;
   const dc=loan.daycount||'actual365';
-  const hasTranches=!!(loan.tranches&&loan.tranches.length);
+  const draws=allLoanDraws(loan);
+  const hasTranches=draws.length>0;
 
-  // Build due dates — correct calendar arithmetic
+  // Build payment due dates
   const dueDates=[];
   for(let i=0;i<n;i++){
-    let dObj;
-    const ms=new Date(startDate+'T12:00:00');
-    if(freq==='monthly'){
-      const tm=ms.getMonth()+(i+1);
-      dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);
-    } else if(freq==='weekly'){
-      dObj=new Date(ms.getTime()+(i+1)*7*86400000);
-    } else if(freq==='biweekly'){
-      dObj=new Date(ms.getTime()+(i+1)*14*86400000);
-    } else if(freq==='semimonthly'){
-      const half=Math.floor(i/2); const rem=i%2;
-      const tm2=ms.getMonth()+half;
-      const y2=ms.getFullYear()+Math.floor(tm2/12); const m2=((tm2%12)+12)%12;
-      dObj=rem===0?nthOfMonth(y2,m2,1):nthOfMonth(y2,m2,15);
-    } else if(freq==='quarterly'){
-      const tm=ms.getMonth()+(i+1)*3;
-      dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);
-    } else if(freq==='semiannual'){
-      const tm=ms.getMonth()+(i+1)*6;
-      dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);
-    } else if(freq==='annual'){
-      dObj=nthOfMonth(ms.getFullYear()+(i+1),ms.getMonth(),payDay);
-    } else {
-      dObj=new Date(ms.getTime()+(i+1)*30.4375*86400000);
-    }
+    const ms=new Date(startDate+'T12:00:00'); let dObj;
+    if(freq==='monthly'){const tm=ms.getMonth()+(i+1);dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);}
+    else if(freq==='weekly'){dObj=new Date(ms.getTime()+(i+1)*7*86400000);}
+    else if(freq==='biweekly'){dObj=new Date(ms.getTime()+(i+1)*14*86400000);}
+    else if(freq==='semimonthly'){const half=Math.floor(i/2);const rem=i%2;const tm2=ms.getMonth()+half;const y2=ms.getFullYear()+Math.floor(tm2/12);const m2=((tm2%12)+12)%12;dObj=rem===0?nthOfMonth(y2,m2,1):nthOfMonth(y2,m2,15);}
+    else if(freq==='quarterly'){const tm=ms.getMonth()+(i+1)*3;dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);}
+    else if(freq==='semiannual'){const tm=ms.getMonth()+(i+1)*6;dObj=nthOfMonth(ms.getFullYear()+Math.floor(tm/12),((tm%12)+12)%12,payDay);}
+    else if(freq==='annual'){dObj=nthOfMonth(ms.getFullYear()+(i+1),ms.getMonth(),payDay);}
+    else{dObj=new Date(ms.getTime()+(i+1)*30.4375*86400000);}
     dueDates.push(dObj.toISOString().slice(0,10));
   }
 
-  // Pre-calc blended PMT using original amount
-  const pmt_rate=effectiveRate(loan,startDate)/100/ppy;
+  // Pre-calc blended PMT based on original amount
+  const initR=effectiveRate(loan,startDate)/100/ppy;
   let blendedPMT=0;
   if(loan.ptype==='blended'){
-    const r=pmt_rate;
-    blendedPMT=r===0?(loan.amount||0)/n:(loan.amount||0)*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+    blendedPMT=initR===0?(loan.amount||0)/n:(loan.amount||0)*(initR*Math.pow(1+initR,n))/(Math.pow(1+initR,n)-1);
   }
 
-  const rows=[]; let balance=loan.amount||0; let prevDate=startDate;
+  // Build master event list — these split periods into sub-periods
+  // so interest is calculated correctly at each rate/balance boundary
+  const events=[];
+  draws.forEach(d=>events.push({date:d.date,type:'draw',amount:d.amount,note:d.note||'',label:d.label||'Draw'}));
+  (loan.principalPayments||[]).forEach(p=>events.push({date:p.date,type:'prepay',amount:p.amount,note:p.note||''}));
+  // Prime rate changes break the period for floating loans
+  if(loan.rtype==='floating'){
+    [...primeHist].sort((a,b)=>a.date.localeCompare(b.date))
+      .forEach(h=>events.push({date:h.date,type:'rate',prime:h.rate,note:`Prime→${h.rate}%`}));
+  }
+  events.sort((a,b)=>a.date.localeCompare(b.date));
+
+  // Running balance — true ledger tracking across all periods
+  // Non-tranched: starts at full loan amount on start date
+  // Tranched: starts at 0, grows as draws occur
+  let balance = hasTranches ? 0 : (loan.amount||0);
+
+  // Apply draws that fall on or before startDate
+  events.filter(e=>e.type==='draw'&&e.date<=startDate).forEach(e=>{ balance+=e.amount; });
+
+  const rows=[];
+  const eventRows=[]; // All rows for schedule display (events + payments, chronological)
+  let prevDate=startDate;
 
   for(let i=0;i<n;i++){
     const dueDate=dueDates[i];
-    // Active balance = drawn amount minus any principal prepayments
-    const drawn=hasTranches?drawnAt(loan,dueDate):balance;
-    const prepaid=principalPaidBy(loan,dueDate);
-    const activeBal=Math.max(0,drawn-prepaid);
-    const rate=effectiveRate(loan,dueDate);
-    const interest=calcInterest(activeBal,rate,prevDate,dueDate,dc);
+    const rec=loan.payments?.[i]||{};
+
+    // Events strictly inside this period (after prevDate, up to dueDate)
+    const periodEvts=events.filter(e=>e.date>prevDate&&e.date<=dueDate)
+      .sort((a,b)=>a.date.localeCompare(b.date));
+
+    let openingBal=balance;
+    let totalInterest=0;
+    let curDate=prevDate;
+    let curBal=balance;
+    const subPeriods=[];
+
+    for(const evt of periodEvts){
+      if(evt.date>curDate){
+        // Interest for sub-period [curDate, evt.date] at current rate and balance
+        const rate=effectiveRate(loan,curDate);
+        const days=Math.round((new Date(evt.date+'T12:00:00')-new Date(curDate+'T12:00:00'))/86400000);
+        if(days>0){
+          const interest=calcInterest(curBal,rate,curDate,evt.date,dc);
+          totalInterest+=interest;
+          subPeriods.push({from:curDate,to:evt.date,openBal:curBal,interest,rate,days,prime:loan.rtype==='floating'?primeAt(curDate):null});
+        }
+      }
+      // Apply event to running balance and add event row for display
+      if(evt.type==='draw'){
+        // Add sub-period interest row before the draw event (if we had days)
+        const prevSubBal=curBal;
+        curBal+=evt.amount;
+        eventRows.push({date:evt.date,type:'draw',amount:evt.amount,balBefore:prevSubBal,balAfter:curBal,note:evt.note||'',label:evt.label||'Draw',periodNum:i+1});
+      } else if(evt.type==='prepay'){
+        const prevSubBal=curBal;
+        curBal=Math.max(0,curBal-evt.amount);
+        eventRows.push({date:evt.date,type:'prepay',amount:evt.amount,balBefore:prevSubBal,balAfter:curBal,note:evt.note||'',periodNum:i+1});
+      }
+      // Rate events just split the period for interest calc — no display row needed
+      curDate=evt.date;
+    }
+
+    // Final sub-period from curDate to dueDate
+    if(curDate<dueDate){
+      const rate=effectiveRate(loan,curDate);
+      const days=Math.round((new Date(dueDate+'T12:00:00')-new Date(curDate+'T12:00:00'))/86400000);
+      if(days>0){
+        const interest=calcInterest(curBal,rate,curDate,dueDate,dc);
+        totalInterest+=interest;
+        subPeriods.push({from:curDate,to:dueDate,openBal:curBal,interest,rate,days,prime:loan.rtype==='floating'?primeAt(curDate):null});
+      }
+    }
+
+    // balance is curBal after all events — before this period's payment/accrual
+    balance=curBal;
+
     let principal=0,payment=0;
     if(loan.ptype==='accrual'){
-      balance=activeBal+interest; payment=0; principal=0;
+      balance=curBal+totalInterest; payment=0; principal=0;
     } else if(loan.ptype==='interest_only'){
-      payment=interest; principal=0; balance=activeBal;
+      payment=totalInterest; principal=0;
+      // balance unchanged — stays at curBal (events already applied above)
     } else if(loan.ptype==='blended'){
-      payment=blendedPMT; principal=Math.max(0,payment-interest);
-      if(i===n-1)principal=activeBal;
-      balance=Math.max(0,activeBal-principal);
+      payment=blendedPMT; principal=Math.max(0,payment-totalInterest);
+      if(i===n-1)principal=curBal;
+      balance=Math.max(0,curBal-principal);
     } else if(loan.ptype==='partial_accrual'){
-      payment=interest*0.5; const cap=interest-payment;
-      balance=activeBal+cap; principal=0;
+      payment=totalInterest*0.5; const cap=totalInterest-payment;
+      balance=curBal+cap; principal=0;
     } else {
-      payment=interest; principal=0; balance=activeBal;
+      payment=totalInterest; principal=0; balance=curBal;
     }
-    const rec=loan.payments?.[i]||{};
-    rows.push({num:i+1,dueDate,prevDate,payment:loan.ptype==='accrual'?0:payment,principal,interest,balance,status:rec.status||'pending',paidDate:rec.paidDate||null,paidAmount:rec.paidAmount||null,ref:rec.ref||null,capitalizedInterest:rec.capitalizedInterest||0,activeBal});
+
+    const row={
+      num:i+1,dueDate,prevDate,openingBal,
+      payment:loan.ptype==='accrual'?0:payment,
+      principal,interest:totalInterest,balance,
+      status:rec.status||'pending',
+      paidDate:rec.paidDate||null,paidAmount:rec.paidAmount||null,ref:rec.ref||null,
+      capitalizedInterest:rec.capitalizedInterest||0,
+      activeBal:curBal,subPeriods
+    };
+    rows.push(row);
+
+    // Add the payment row to eventRows for interleaved display
+    eventRows.push({date:dueDate,type:'payment',row,periodNum:i+1,rowIndex:i});
+
     prevDate=dueDate;
   }
 
-  const trancheRows=hasTranches?loan.tranches.map((t,i)=>({isTranche:true,num:'T'+(i+1),dueDate:t.date,amount:t.amount,note:t.note||''})):[];
-  const ppRows=(loan.principalPayments||[]).map((p,i)=>({isPrincipal:true,num:'PP'+(i+1),dueDate:p.date,amount:p.amount,note:p.note||'',method:p.method||''}));
-  const allRows=[...rows,...trancheRows,...ppRows].sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
-  return{rows,trancheRows,allRows};
+  // Sort eventRows chronologically; draws/prepays before payment on same date
+  eventRows.sort((a,b)=>{
+    const dc2=a.date.localeCompare(b.date);
+    if(dc2!==0)return dc2;
+    const order={draw:0,prepay:1,payment:2};
+    return (order[a.type]||2)-(order[b.type]||2);
+  });
+
+  return{rows,eventRows};
 }
 
 function loanBal(loan){
   const{rows}=buildSchedule(loan);
-  // Find last paid row
   const lastPaid=[...rows].reverse().find(r=>r.status==='paid');
   if(lastPaid)return lastPaid.balance;
-  return loan.amount||0;
+  // No payments yet — return balance from last row (includes accrual/draws)
+  return rows.length?rows[rows.length-1].openingBal:(loan.amount||0);
 }
 function loanStatus(loan){
   if(loan.status==='closed')return'closed';
@@ -1031,7 +1120,7 @@ function renderSched(){
   const body=document.getElementById('amortBody');const kpis=document.getElementById('skpis');
   if(!id){body.innerHTML='<div style="text-align:center;padding:50px;color:var(--text3)">Select a loan above.</div>';kpis.style.display='none';return;}
   const loan=loans.find(l=>l.id===id); if(!loan)return;
-  const{rows,trancheRows}=buildSchedule(loan); const td=today();
+  const{rows,eventRows}=buildSchedule(loan); const td=today();
   if(!rows.length){body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">No schedule — check loan term and start date.</div>';kpis.style.display='none';return;}
   const paidRows=rows.filter(r=>r.status==='paid');
   const totalPaid=paidRows.reduce((s,r)=>s+(r.paidAmount||r.payment),0);
@@ -1045,42 +1134,74 @@ function renderSched(){
     <div class="k"><div class="kl">Total Interest</div><div class="kv">${$c(totalInt)}</div></div>
     <div class="k"><div class="kl">Payments</div><div class="kv">${paidRows.length}/${rows.length}</div></div>
     <div class="k"><div class="kl">Balance</div><div class="kv">${$c(loanBal(loan))}</div></div>
-    <div class="k"><div class="kl">${loan.ptype==='accrual'?'Accrued':'Next Due'}</div><div class="kv" style="font-size:.8rem">${loan.ptype==='accrual'?$c(rows[rows.length-1]?.balance-(loan.amount||0)):nxt?fdt(nxt.dueDate):'Complete'}</div></div>`;
-  let displayRows=[...rows];
-  if(sf2==='upcoming')displayRows=rows.filter(r=>r.status==='pending'&&r.dueDate>=td);
-  else if(sf2==='past')displayRows=rows.filter(r=>r.status==='paid'||r.dueDate<td);
-  else if(sf2==='missed')displayRows=rows.filter(r=>r.status==='missed');
+    <div class="k"><div class="kl">${loan.ptype==='accrual'?'Total Accrued':'Next Due'}</div><div class="kv" style="font-size:.8rem">${loan.ptype==='accrual'?$c(totalInt):nxt?fdt(nxt.dueDate):'Complete'}</div></div>`;
   const firstPending=rows.find(r=>r.status==='pending');
-  // Build tranche header rows
+  // Filter which payment period numbers are visible under current filter
+  let visNums=new Set(rows.map(r=>r.num));
+  if(sf2==='upcoming')visNums=new Set(rows.filter(r=>r.status==='pending'&&r.dueDate>=td).map(r=>r.num));
+  else if(sf2==='past')visNums=new Set(rows.filter(r=>r.status==='paid'||r.dueDate<td).map(r=>r.num));
+  else if(sf2==='missed')visNums=new Set(rows.filter(r=>r.status==='missed').map(r=>r.num));
+  const visEvts=sf2==='all'?eventRows:eventRows.filter(er=>er.type==='payment'?visNums.has(er.row.num):visNums.has(er.periodNum));
   let html='';
-  if(loan.tranches&&loan.tranches.length&&sf2==='all'){
-    loan.tranches.forEach(t=>{
-      html+=`<div class="arow tranche-row"><div style="color:var(--blue);font-size:.62rem;font-weight:700">DRAW</div><div style="font-size:.7rem">${fdt(t.date)}</div><div class="mono" style="color:var(--blue);font-weight:600">${$c(t.amount)}</div><div></div><div></div><div></div><div style="font-size:.62rem;color:var(--text3)">${t.note||''}</div></div>`;
-    });
+  for(const er of visEvts){
+    if(er.type==='draw'){
+      html+=`<div class="arow tranche-row" style="grid-template-columns:36px 95px 88px 88px 88px 100px 110px">
+        <div style="color:var(--blue);font-size:.59rem;font-weight:700">DRAW</div>
+        <div style="font-size:.7rem;color:var(--blue)">${fdt(er.date)}</div>
+        <div class="mono" style="color:var(--blue);font-weight:700">+${$c(er.amount)}</div>
+        <div></div><div></div>
+        <div class="mono" style="font-weight:600;color:var(--blue)">${$c(er.balAfter)}</div>
+        <div style="font-size:.62rem;color:var(--text3)">${er.note||er.label||''}</div>
+      </div>`;
+    } else if(er.type==='prepay'){
+      html+=`<div class="arow princ-row" style="grid-template-columns:36px 95px 88px 88px 88px 100px 110px">
+        <div style="color:var(--purple);font-size:.59rem;font-weight:700">PREPAY</div>
+        <div style="font-size:.7rem;color:var(--purple)">${fdt(er.date)}</div>
+        <div class="mono" style="color:var(--purple);font-weight:700">-${$c(er.amount)}</div>
+        <div></div><div></div>
+        <div class="mono" style="font-weight:600;color:var(--purple)">${$c(er.balAfter)}</div>
+        <div style="font-size:.62rem;color:var(--text3)">${er.note||''}</div>
+      </div>`;
+    } else if(er.type==='payment'){
+      const row=er.row;
+      const isNext=firstPending&&row.num===firstPending.num;
+      const isOvr=row.status==='pending'&&row.dueDate<td;
+      const cls=row.status==='paid'?'paid':isOvr?'overdue':isNext?'next':'';
+      const action=row.status==='paid'
+        ?`<span class="badge b-green" style="font-size:.56rem">✓ Paid</span> <button class="btn btn-ghost btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="font-size:.56rem;padding:2px 5px">Rev</button>`
+        :row.status==='missed'
+        ?`<span class="badge b-red">Missed</span> <button class="btn btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="background:var(--amber-d);color:var(--amber);border:1px solid rgba(217,119,6,.2);padding:2px 6px;font-size:.62rem;border-radius:6px;cursor:pointer;font-weight:600">Rev</button>`
+        :loan.ptype==='accrual'
+        ?`<span class="badge b-blue" style="font-size:.53rem">Accruing</span>`
+        :`<button class="btn btn-green btn-xs" onclick="openPayRow('${id}',${row.num-1})">Pay</button>`;
+      // Show sub-period interest breakdown when period contains events (draws/prepays/rate changes)
+      const hasBreakdown=row.subPeriods&&row.subPeriods.length>1;
+      let breakdown='';
+      if(hasBreakdown){
+        breakdown=`<div style="grid-column:1/-1;background:rgba(0,0,0,.03);border-top:1px dashed var(--border);padding:5px 8px 6px 44px">
+          <div style="font-size:.56rem;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Interest Calculation Breakdown</div>
+          ${row.subPeriods.map(sp=>`<div style="display:flex;gap:12px;font-size:.64rem;color:var(--text2);padding:2px 0;border-bottom:1px solid rgba(0,0,0,.04)">
+            <span style="min-width:170px">${fdt(sp.from)} → ${fdt(sp.to)}</span>
+            <span class="mono" style="color:var(--text3);min-width:28px">${sp.days}d</span>
+            <span class="mono" style="color:var(--text3);min-width:55px">${sp.rate.toFixed(3)}%</span>
+            <span class="mono" style="min-width:90px">on ${$c(sp.openBal)}</span>
+            <span class="mono" style="color:var(--amber);font-weight:600">= ${$c(sp.interest)}</span>
+            ${sp.prime!=null?`<span style="color:var(--text3);font-size:.6rem">Prime ${sp.prime.toFixed(2)}%</span>`:''}
+          </div>`).join('')}
+        </div>`;
+      }
+      html+=`<div class="arow ${cls}" style="${hasBreakdown?'flex-wrap:wrap':''}">
+        <div class="mono" style="color:var(--text3);font-size:.67rem">${row.num}</div>
+        <div style="font-size:.7rem;color:${isOvr?'var(--red)':'var(--text2)'}">${fdt(row.dueDate)}</div>
+        <div class="mono">${$c(loan.ptype==='accrual'?0:row.payment)}</div>
+        <div class="mono">${$c(row.principal)}</div>
+        <div class="mono" style="color:var(--amber)">${$c(row.interest)}${hasBreakdown?'<span title="Interest calculated across '+row.subPeriods.length+' sub-periods" style="color:var(--blue);margin-left:3px;font-size:.55rem;cursor:help">ⓘ</span>':''}</div>
+        <div class="mono" style="font-weight:600">${$c(row.balance)}</div>
+        <div>${action}</div>
+        ${breakdown}
+      </div>`;
+    }
   }
-  if(loan.principalPayments&&loan.principalPayments.length&&sf2==='all'){
-    loan.principalPayments.forEach(p=>{
-      html+=`<div class="arow princ-row"><div style="color:var(--purple);font-size:.62rem;font-weight:700">PREPAY</div><div style="font-size:.7rem">${fdt(p.date)}</div><div class="mono" style="color:var(--purple);font-weight:600">${$c(p.amount)}</div><div></div><div></div><div></div><div style="font-size:.62rem;color:var(--text3)">${p.note||''}</div></div>`;
-    });
-  }
-  html+=displayRows.map(row=>{
-    const isNext=firstPending&&row.num===firstPending.num;
-    const isOvr=row.status==='pending'&&row.dueDate<td;
-    const cls=row.status==='paid'?'paid':isOvr?'overdue':isNext?'next':'';
-    const action=row.status==='paid'?`<span class="badge b-green" style="font-size:.56rem">✓ Paid</span> <button class="btn btn-ghost btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="font-size:.58rem;padding:2px 6px">Reverse</button>`
-      :row.status==='missed'?`<span class="badge b-red">Missed</span> <button class="btn btn-xs" onclick="reverseMissed('${id}',${row.num-1})" style="background:var(--amber-d);color:var(--amber);border:1px solid rgba(217,119,6,.2);padding:2px 7px;font-size:.63rem;border-radius:6px;cursor:pointer;font-weight:600">Reverse</button>`
-      :loan.ptype==='accrual'?`<span class="badge b-blue" style="font-size:.53rem">Accruing</span>`
-      :`<button class="btn btn-green btn-xs" onclick="openPayRow('${id}',${row.num-1})">Pay</button>`;
-    return`<div class="arow ${cls}">
-      <div class="mono" style="color:var(--text3);font-size:.68rem">${row.num}</div>
-      <div style="font-size:.7rem;color:${isOvr?'var(--red)':'var(--text2)'}">${fdt(row.dueDate)}</div>
-      <div class="mono">${$c(loan.ptype==='accrual'?0:row.payment)}</div>
-      <div class="mono">${$c(row.principal)}</div>
-      <div class="mono" style="color:var(--amber)">${$c(row.interest)}</div>
-      <div class="mono" style="font-weight:600">${$c(row.balance)}</div>
-      <div>${action}</div>
-    </div>`;
-  }).join('');
   body.innerHTML=html||'<div style="text-align:center;padding:30px;color:var(--text3)">No payments match filter.</div>';
 }
 
@@ -1307,20 +1428,45 @@ function submitMissed(){
   const{rows}=buildSchedule(loan);const row=rows[payCtx.idx];
   const capInt=row?row.interest:0;
   loan.payments[payCtx.idx]={status:'missed',paidDate:null,paidAmount:0,capitalizedInterest:capInt};
-  loan.amount=(loan.amount||0)+capInt;
-  save();log(`⚠️ Missed #${payCtx.idx+1}: ${loan.borrower} — ${$c(capInt)} capitalized`,'payment');
-  toast(`Missed — ${$c(capInt)} capitalized into principal`,'warning');
+  // NOTE: We record capInt for reversal but do NOT modify loan.amount — engine handles balance
+  save();log(`⚠️ Missed #${payCtx.idx+1}: ${loan.borrower} — ${$c(capInt)} interest`,'payment');
+  toast(`Marked missed — ${$c(capInt)} interest not collected`,'warning');
   closeMod('payMod');refreshAll();
 }
 function reverseMissed(id,idx){
   const loan=loans.find(l=>l.id===id);if(!loan)return;
   const rec=loan.payments?.[idx];if(!rec)return;
-  const wasCap=rec.capitalizedInterest||0;
-  if(wasCap>0){loan.amount=Math.max(0,(loan.amount||0)-wasCap);}
   loan.payments[idx]={status:'pending',paidDate:null,paidAmount:0};
   save();log(`↩️ Reversed payment #${idx+1}: ${loan.borrower}`,'payment');
-  toast(wasCap>0?`Reversed — ${$c(wasCap)} removed from principal`:'Payment reversed','info');
+  toast('Payment reversed to pending','info');
   refreshAll();
+}
+function openDrawModal(id){
+  const loan=loans.find(l=>l.id===id);if(!loan)return;
+  document.getElementById('dr-loanname').textContent=loan.borrower+' ('+loan.id+')';
+  document.getElementById('dr-balance').textContent=$c(loanBal(loan));
+  document.getElementById('dr-date').value=today();
+  document.getElementById('dr-amt').value='';
+  document.getElementById('dr-ref').value='';
+  document.getElementById('dr-note').value='';
+  document.getElementById('drawMod').dataset.loanId=id;
+  openMod('drawMod');
+}
+function saveDraw(){
+  const id=document.getElementById('drawMod').dataset.loanId;
+  const loan=loans.find(l=>l.id===id);if(!loan)return;
+  const amt=parseFloat(document.getElementById('dr-amt').value);
+  const date=document.getElementById('dr-date').value;
+  if(!amt||amt<=0){toast('Enter a valid amount','error');return;}
+  if(!date){toast('Date required','error');return;}
+  if(!loan.draws)loan.draws=[];
+  loan.draws.push({date,amount:amt,method:document.getElementById('dr-meth').value,ref:document.getElementById('dr-ref').value,note:document.getElementById('dr-note').value,label:document.getElementById('dr-note').value||'Draw'});
+  loan.draws.sort((a,b)=>a.date.localeCompare(b.date));
+  save();
+  log(`📤 Draw recorded: ${loan.borrower} — ${$c(amt)} on ${fdt(date)}`,'payment');
+  toast(`${$c(amt)} draw added to balance`,'success');
+  closeMod('drawMod');
+  refreshAll();openLoanPanel(id);
 }
 function openPrincipalModal(id){
   const loan=loans.find(l=>l.id===id);if(!loan)return;
@@ -1343,8 +1489,10 @@ function savePrincipalPayment(){
   if(!loan.principalPayments)loan.principalPayments=[];
   loan.principalPayments.push({date,amount:amt,method:document.getElementById('pp-meth').value,ref:document.getElementById('pp-ref').value,note:document.getElementById('pp-note').value});
   loan.principalPayments.sort((a,b)=>a.date.localeCompare(b.date));
-  save();log(`💵 Principal prepayment: ${loan.borrower} — ${$c(amt)}`,'payment');
-  toast(`${$c(amt)} applied to principal`,'success');closeMod('princMod');
+  // NOTE: do NOT modify loan.amount — the engine calculates running balance from events
+  save();log(`💵 Prepayment: ${loan.borrower} — ${$c(amt)}`,'payment');
+  toast(`${$c(amt)} prepayment recorded. New balance: ${$c(loanBal(loan))}`,'success');
+  closeMod('princMod');
   refreshAll();openLoanPanel(id);
 }
 function refreshAll(){
@@ -1377,11 +1525,13 @@ function openLoanPanel(id){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.74rem;margin-bottom:13px;color:var(--text2)">
       ${[['Start',fdt(loan.startDate)],['Maturity',fdt(end.toISOString().slice(0,10))],['Frequency',loan.freq||'—'],['Pay Type',loan.ptype||'—'],['Day Count',loan.daycount||'Actual/365'],['Grace',(loan.gracePeriod||5)+' days'],loan.collateral?['Collateral',loan.collateral]:null,loan.email?['Email',loan.email]:null].filter(Boolean).map(([k,v])=>`<div><div style="font-size:.58rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">${k}</div><div style="font-weight:500;color:var(--text);margin-top:2px">${v}</div></div>`).join('')}
     </div>
-    ${loan.tranches?.length?`<div style="margin-bottom:12px"><div style="font-size:.58rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Tranches (${loan.tranches.length})</div>${loan.tranches.map((t,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.73rem"><span style="color:var(--text2)">T${i+1} · ${fdt(t.date)}</span><span class="mono" style="color:var(--blue);font-weight:600">${$c(t.amount)}</span></div>`).join('')}</div>`:''}
+    ${loan.tranches?.length?`<div style="margin-bottom:12px"><div style="font-size:.58rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Upfront Tranches (${loan.tranches.length})</div>${loan.tranches.map((t,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.73rem"><span style="color:var(--text2)">T${i+1} · ${fdt(t.date)}</span><span class="mono" style="color:var(--blue);font-weight:600">${$c(t.amount)}</span></div>`).join('')}</div>`:''}
+    ${(loan.draws||[]).length?`<div style="margin-bottom:12px"><div style="font-size:.58rem;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Post-Setup Draws (${loan.draws.length})</div>${loan.draws.map((d,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.73rem"><span style="color:var(--text2)">${fdt(d.date)} · ${d.note||'Draw'}</span><span class="mono" style="color:var(--blue);font-weight:600">${$c(d.amount)}</span></div>`).join('')}</div>`:''}
     ${(loan.principalPayments||[]).length?`<div style="margin-bottom:12px"><div style="font-size:.58rem;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px">Principal Prepayments</div>${loan.principalPayments.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.73rem"><span style="color:var(--text2)">${fdt(p.date)} · ${p.note||'Prepayment'}</span><span class="mono" style="color:var(--purple);font-weight:600">-${$c(p.amount)}</span></div>`).join('')}</div>`:''}
     ${rows.filter(r=>r.status==='paid'||r.status==='missed').length?`<div style="font-size:.58rem;color:var(--green2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Recent Payments</div>${rows.filter(r=>r.status==='paid'||r.status==='missed').slice(-5).map(r=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.73rem"><div><span style="font-weight:500">#${r.num}</span><span style="color:var(--text3);margin-left:7px;font-size:.61rem">${fdt(r.paidDate||r.dueDate)}</span></div><div style="display:flex;gap:6px;align-items:center"><span class="mono">${r.status==='paid'?$c(r.paidAmount||r.payment):'—'}</span>${r.status==='paid'?'<span class="badge b-green">Paid</span>':'<span class="badge b-red">Missed</span>'}</div></div>`).join('')}`:'<div style="color:var(--text3);font-size:.72rem;padding:6px 0">No payment history</div>'}
     <div style="display:flex;gap:6px;margin-top:14px;flex-wrap:wrap">
       <button class="btn btn-green" style="flex:1" onclick="openPayForLoan('${loan.id}')">Record Payment</button>
+      <button class="btn btn-blue btn-sm" onclick="openDrawModal('${loan.id}')">+ Draw</button>
       <button class="btn btn-gold btn-sm" onclick="openPrincipalModal('${loan.id}')">+ Prepay</button>
       <button class="btn btn-ghost btn-sm" onclick="viewSched('${loan.id}')">Schedule</button>
       <button class="btn btn-danger btn-sm" onclick="delLoan('${loan.id}')">Delete</button>
@@ -1453,41 +1603,48 @@ function runExport(){
 
 function exportLoanToCSV(id,range='all',fromDate='',toDate='',showPaid=true,showTranches=true){
   const loan=loans.find(l=>l.id===id); if(!loan)return;
-  const{rows}=buildSchedule(loan);
+  const{rows,eventRows}=buildSchedule(loan);
   let filteredRows=[...rows];
   if(range==='ytd'){const yr=new Date().getFullYear();filteredRows=rows.filter(r=>r.dueDate.startsWith(yr));}
   else if(range==='custom'&&fromDate&&toDate){filteredRows=rows.filter(r=>r.dueDate>=fromDate&&r.dueDate<=toDate);}
   if(!showPaid)filteredRows=filteredRows.filter(r=>r.status!=='paid');
 
-  // Build CSV matching Annan Valley format exactly
+  const allDraws=allLoanDraws(loan);
   const lines=[];
-  // Header block
+  // Header block — matches Annan Valley format
   lines.push(`"${loan.borrower}","","","","","","","","Original Loan Amount","${loan.amount}","","Loan Advance Date","${loan.startDate}"`);
-  lines.push(`"${loan.notes||loan.type||''}","","","","","","","","Interest Rate","${((effectiveRate(loan)/100)).toFixed(4)}","","Maturity Date","${(()=>{const tm=(loan.termUnit==='years'?(loan.term||0)*12:(loan.term||0));const e=new Date((loan.startDate)+'T12:00:00');e.setMonth(e.getMonth()+tm);return e.toISOString().slice(0,10);})()}"`);
+  lines.push(`"${loan.notes||loan.type||''}","","","","","","","","Interest Rate","${(effectiveRate(loan)/100).toFixed(4)}","","Maturity Date","${(()=>{const tm=(loan.termUnit==='years'?(loan.term||0)*12:(loan.term||0));const e=new Date(loan.startDate+'T12:00:00');e.setMonth(e.getMonth()+tm);return e.toISOString().slice(0,10);})()}"`);
   lines.push(`"","","","","","","","","Day Count","${loan.daycount||'Actual/365'}","","Today","${today()}"`);
-  lines.push(`"","","","","","","","","Payment Type","${loan.ptype||'Interest Only'}","","",""  `);
+  lines.push(`"","","","","","","","","Rate Type","${loan.rtype==='floating'?'Prime +'+loan.spread+'%':'Fixed '+loan.rate+'%'}","","",""  `);
+  lines.push(`"","","","","","","","","Payment Type","${loan.ptype||'Interest Only'}","","",""`);
   lines.push(`"","","","","","","","","","","","",""`);
-  // Column headers — exact match to Annan Valley
-  lines.push(`"","Opening Balance","Tranches","Interest Payment","Principal Payment","Total Payment","Closing Balance","","","","","",""`);
-  // Initial row (loan advance date — tranche / opening)
-  if(loan.tranches&&loan.tranches.length){
-    loan.tranches.forEach((t,i)=>{
-      lines.push(`"${t.date}","${i===0?'0':loan.tranches.slice(0,i).reduce((s,x)=>s+x.amount,0).toFixed(6)}","${t.amount.toFixed(6)}","","","0","${loan.tranches.slice(0,i+1).reduce((s,x)=>s+x.amount,0).toFixed(6)}","","","","","",""`);
+  lines.push(`"","Opening Balance","Draws / Tranches","Interest","Principal Payment","Total Payment","Closing Balance","","","","","",""`);
+
+  // Initial advance row
+  if(allDraws.length){
+    let runBal=0;
+    allDraws.filter(d=>d.date<=loan.startDate).forEach((d,i)=>{
+      lines.push(`"${d.date}","${runBal.toFixed(6)}","${d.amount.toFixed(6)}","","","0","${(runBal+=d.amount).toFixed(6)}","","","","","",""`);
     });
   } else {
     lines.push(`"${loan.startDate}","0","${loan.amount.toFixed(6)}","","","0","${loan.amount.toFixed(6)}","","","","","",""`);
   }
-  // Payment rows
-  filteredRows.forEach(row=>{
-    const opening=row.activeBal;
-    const closing=row.balance;
-    const tranche=showTranches&&loan.tranches?loan.tranches.filter(t=>t.date===row.dueDate).reduce((s,t)=>s+t.amount,0):0;
-    const interestPmt=row.payment>0?row.interest:0;
-    const principalPmt=row.principal||0;
-    const totalPmt=row.payment||0;
-    lines.push(`"${row.dueDate}","${opening.toFixed(6)}","${tranche>0?tranche.toFixed(6):''}","${interestPmt.toFixed(6)}","${principalPmt.toFixed(6)}","${totalPmt.toFixed(6)}","${closing.toFixed(6)}","","","","","",""`);
+
+  // Payment rows — use eventRows to interleave draws and payments in date order
+  const filteredNums=new Set(filteredRows.map(r=>r.num));
+  const exportEvts=eventRows.filter(er=>er.type==='payment'?filteredNums.has(er.row.num):true);
+  exportEvts.forEach(er=>{
+    if(er.type==='draw'&&showTranches){
+      lines.push(`"${er.date}","${er.balBefore.toFixed(6)}","${er.amount.toFixed(6)}","","","","${er.balAfter.toFixed(6)}","","","","","${er.note||'Draw'}",""`);
+    } else if(er.type==='prepay'){
+      lines.push(`"${er.date}","${er.balBefore.toFixed(6)}","","","${(-er.amount).toFixed(6)}","","${er.balAfter.toFixed(6)}","","","","","${er.note||'Prepayment'}",""`);
+    } else if(er.type==='payment'&&filteredNums.has(er.row.num)){
+      const row=er.row;
+      lines.push(`"${row.dueDate}","${row.openingBal.toFixed(6)}","","${row.interest.toFixed(6)}","${(row.principal||0).toFixed(6)}","${(row.payment||0).toFixed(6)}","${row.balance.toFixed(6)}","","","","","${row.status}",""`);
+    }
   });
-  // Totals row
+
+  // Totals
   const totalInt=filteredRows.reduce((s,r)=>s+r.interest,0);
   const totalPrinc=filteredRows.reduce((s,r)=>s+(r.principal||0),0);
   const totalPmts=filteredRows.reduce((s,r)=>s+(r.payment||0),0);
@@ -1499,7 +1656,7 @@ function exportLoanToCSV(id,range='all',fromDate='',toDate='',showPaid=true,show
   a.download=`${loan.borrower.replace(/[^a-z0-9]/gi,'_')}_LoanSchedule_${today()}.csv`;
   a.click();
   toast(`Exported: ${loan.borrower}`,'success');
-  log(`📤 Exported schedule: ${loan.borrower}`,'edit');
+  log(`📤 Exported: ${loan.borrower}`,'edit');
 }
 
 // ═══════════════════════════════════════════════
