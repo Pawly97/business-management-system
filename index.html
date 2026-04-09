@@ -605,9 +605,21 @@ td:first-child{color:var(--text);font-weight:500;}
         <div class="fg"><div class="fl">Late Fee ($)</div><input class="fi mono" id="ft-lf" type="number" value="100"></div>
         <div class="fg"><div class="fl">Renewal Options</div><input class="fi" id="ft-renew" placeholder="2 x 5-year options"></div>
         <div class="fg"><div class="fl">% of Sales (if Pct lease)</div><input class="fi mono" id="ft-pct" type="number" step="0.1"></div>
-        <div class="fsec ff">Escalation</div>
-        <div class="fg"><div class="fl">Escalation Type</div><select class="fs" id="ft-esc"><option value="none">None</option><option value="fixed_pct">Fixed % / Year</option><option value="cpi">CPI-linked</option><option value="stepped">Stepped</option></select></div>
-        <div class="fg"><div class="fl">Rate (%)</div><input class="fi mono" id="ft-escrate" type="number" step="0.1"></div>
+        <div class="fsec ff">Rent Schedule / Escalation</div>
+        <div class="fg"><div class="fl">Escalation Type</div><select class="fs" id="ft-esc" onchange="toggleEscFields()"><option value="none">None (fixed rent throughout)</option><option value="fixed_pct">Fixed % per year</option><option value="cpi">CPI-linked</option><option value="stepped">Stepped — set rent by date range</option></select></div>
+        <div class="fg" id="ft-escrate-row"><div class="fl">Rate (%) — for Fixed % or CPI</div><input class="fi mono" id="ft-escrate" type="number" step="0.1"></div>
+        <!-- Stepped rent schedule builder -->
+        <div class="fg ff" id="ft-steps-panel" style="display:none">
+          <div class="fl" style="margin-bottom:6px">Rent Steps — set a different rent for each date range</div>
+          <div id="ft-steps-list" style="margin-bottom:8px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:11px">
+            <div class="fg"><div class="fl">From Date</div><input class="fi" type="date" id="ft-step-from"></div>
+            <div class="fg"><div class="fl">To Date</div><input class="fi" type="date" id="ft-step-to"></div>
+            <div class="fg"><div class="fl">Monthly Rent ($)</div><input class="fi mono" type="number" id="ft-step-rent" placeholder="0"></div>
+            <div class="fg" style="justify-content:flex-end;padding-top:18px"><button class="btn btn-ghost btn-sm" onclick="addRentStep()">+ Add</button></div>
+          </div>
+          <div style="font-size:.63rem;color:var(--text3);margin-top:5px">Tip: Steps override the base rent for their date range. Dates outside steps use the base rent above.</div>
+        </div>
         <div class="fg ff"><div class="fl">Notes</div><textarea class="fta" id="ft-notes"></textarea></div>
       </div>
     </div>
@@ -1001,18 +1013,19 @@ function buildSchedule(loan){
 }
 
 function loanBal(loan){
-  const{rows}=buildSchedule(loan); const td=today();
+  const{rows,eventRows}=buildSchedule(loan); const td=today();
   if(!rows.length) return loan.amount||0;
-  // Walk rows in sequence — balance flows through paid/missed rows.
-  // Stop at first future-pending row and return the balance at that point.
+  // Walk all events chronologically up to today to find the true current balance.
+  // This correctly handles draws, prepays, and paid/missed payments.
   let bal=rows[0].openingBal;
-  for(const r of rows){
-    if(r.status==='paid'||r.status==='missed'){
-      bal=r.balance; // use the post-processing balance (missed capitalizes, paid reduces)
-    } else {
-      // pending row — if overdue, stay at its opening balance; if future, stop
-      if(r.dueDate<td) bal=r.openingBal; // overdue but unpaid — opening balance is current
-      break;
+  for(const er of eventRows){
+    if(er.date>td) break; // stop at future events
+    if(er.type==='draw')  { bal=er.balAfter; }
+    else if(er.type==='prepay') { bal=er.balAfter; }
+    else if(er.type==='payment'){
+      const r=er.row;
+      if(r.status==='paid'||r.status==='missed') bal=r.balance;
+      // pending: balance unchanged by unpaid row
     }
   }
   return bal;
@@ -1728,17 +1741,18 @@ function renderREDash(){
   const totalExp=props.reduce((s,p)=>s+(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0),0);
   const noi=monthlyRent-totalExp;
   const openWOs=maint.filter(m=>m.status==='open'||m.status==='in-progress').length;
-  const totalUnits=props.reduce((s,p)=>s+(p.units||1),0);
-  const occPct=totalUnits>0?activeT.length/totalUnits*100:0;
+  const totalGLA_all=props.reduce((s,p)=>s+(p.gla||0),0);
+  const leasedSqft_all=activeT.reduce((s,t)=>s+(t.sqft||0),0);
+  const occPct=totalGLA_all>0?leasedSqft_all/totalGLA_all*100:0;
   document.getElementById('rStats').innerHTML=[
     ['🏢','Value',$s(totalVal),'Portfolio market value','var(--gold)'],
     ['📈','NOI/mo',$s(noi),'Net operating income','var(--green2)'],
-    ['👥','Occupancy',occPct.toFixed(0)+'%',activeT.length+'/'+totalUnits+' let','var(--blue)'],
+    ['👥','Occupancy',occPct.toFixed(0)+'%',leasedSqft_all.toLocaleString()+' / '+totalGLA_all.toLocaleString()+' sqft','var(--blue)'],
     ['🔧','Open WOs',openWOs.toString(),openWOs?'Attention needed':'All clear','var(--amber)'],
   ].map(([ic,l,v,sub,c])=>`<div class="sc"><div class="sc-icon">${ic}</div><div class="sc-label">${l}</div><div class="sc-val" style="color:${c}">${v}</div><div class="sc-sub">${sub}</div></div>`).join('');
   const tbody=document.getElementById('rdRows');
   if(!props.length)tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:25px;color:var(--text3)">No properties added</td></tr>';
-  else tbody.innerHTML=props.map(p=>{const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);const rent=pt.reduce((s,t)=>s+(t.rent||0),0);const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);const pnoi=rent-exp;const occ=p.units>0?pt.length/p.units*100:0;return`<tr onclick="openPropPanel('${p.id}')"><td>${p.name}</td><td>${p.type}</td><td>${p.units||1}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pb" style="width:44px"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div>${occ.toFixed(0)}%</div></td><td class="mono" style="color:${pnoi>=0?'var(--green2)':'var(--red)'}">${$c(pnoi)}</td><td>${occ>0?'<span class="badge b-green">Active</span>':'<span class="badge b-gray">Vacant</span>'}</td></tr>`;}).join('');
+  else tbody.innerHTML=props.map(p=>{const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);const rent=pt.reduce((s,t)=>s+(t.rent||0),0);const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);const pnoi=rent-exp;const leasedSF=pt.reduce((s,t)=>s+(t.sqft||0),0);const occ=p.gla>0?leasedSF/p.gla*100:0;return`<tr onclick="openPropPanel('${p.id}')"><td>${p.name}</td><td>${p.type}</td><td>${p.gla?p.gla.toLocaleString()+' sf':'—'}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pb" style="width:44px"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div>${occ.toFixed(0)}%</div></td><td class="mono" style="color:${pnoi>=0?'var(--green2)':'var(--red)'}">${$c(pnoi)}</td><td>${occ>0?'<span class="badge b-green">Active</span>':'<span class="badge b-gray">Vacant</span>'}</td></tr>`;}).join('');
   document.getElementById('rentDue').innerHTML=activeT.length?activeT.slice(0,5).map(t=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.74rem"><div><div style="font-weight:500">${t.name}</div><div style="font-size:.61rem;color:var(--text3)">${propName(t.propertyId)} · ${t.unit||'—'}</div></div><div class="mono" style="color:var(--green2);font-weight:600">${$c(t.rent)}</div></div>`).join(''):'<div style="color:var(--text3);font-size:.72rem;text-align:center;padding:14px">No active tenants</div>';
   const in90=new Date();in90.setDate(in90.getDate()+90);
   const exp=tenants.filter(t=>t.leaseEnd&&t.leaseEnd>=td&&new Date(t.leaseEnd+'T12:00:00')<=in90);
@@ -1769,7 +1783,7 @@ function renderProps(){
     const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);
     const rent=pt.reduce((s,t)=>s+(t.rent||0),0);
     const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);
-    const noi=rent-exp;const occ=p.units>0?pt.length/p.units*100:0;const capRate=p.value>0?noi*12/p.value*100:0;
+    const noi=rent-exp;const leasedSF=pt.reduce((s,t)=>s+(t.sqft||0),0);const occ=p.gla>0?leasedSF/p.gla*100:0;const capRate=p.value>0?noi*12/p.value*100:0;
     const ytdCam=camExp.filter(c=>c.propId===p.id&&c.year===new Date().getFullYear()).reduce((s,c)=>s+(c.actual||0),0);
     return`<div class="ec" onclick="openPropPanel('${p.id}')">
       <div class="ect"><div><div class="ecn">${p.name}</div><div class="ecm">${p.type}${p.year?' · '+p.year:''}${p.gla?' · '+p.gla.toLocaleString()+' sqft':''}</div></div><div style="display:flex;gap:5px"><span class="badge ${occ>0?'b-green':'b-gray'}">${occ.toFixed(0)}% occ.</span><button class="btn btn-danger btn-xs" onclick="event.stopPropagation();delProp('${p.id}')">✕</button></div></div>
@@ -1778,12 +1792,12 @@ function renderProps(){
         <div class="ecsi"><label>Rent/mo</label><div class="v" style="color:var(--green2)">${$c(rent)}</div></div>
         <div class="ecsi"><label>NOI/mo</label><div class="v" style="color:${noi>=0?'var(--green2)':'var(--red)'}">${$c(noi)}</div></div>
         <div class="ecsi"><label>Cap Rate</label><div class="v">${capRate.toFixed(1)}%</div></div>
-        <div class="ecsi"><label>Tenants</label><div class="v">${pt.length}/${p.units}</div></div>
+        <div class="ecsi"><label>Leased sqft</label><div class="v">${leasedSF.toLocaleString()}/${(p.gla||0).toLocaleString()}</div></div>
         <div class="ecsi"><label>Exp/mo</label><div class="v" style="color:var(--amber)">${$c(exp)}</div></div>
         <div class="ecsi"><label>YTD CAM</label><div class="v">${$s(ytdCam)}</div></div>
         <div class="ecsi"><label>Open WOs</label><div class="v" style="color:${maint.filter(m=>m.propId===p.id&&m.status!=='completed').length?'var(--red)':'var(--text)'}">${maint.filter(m=>m.propId===p.id&&m.status!=='completed').length}</div></div>
       </div>
-      <div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:.61rem;color:var(--text3)">Occupancy</span><span style="font-size:.61rem;color:var(--text2)">${pt.length}/${p.units}</span></div><div class="pb"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:.61rem;color:var(--text3)">Occupancy (sqft)</span><span style="font-size:.61rem;color:var(--text2)">${occ.toFixed(0)}%</span></div><div class="pb"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div></div>
     </div>`;
   }).join('');
 }
@@ -1792,11 +1806,11 @@ function delProp(id){if(!confirm('Delete property and all data?'))return;const p
 function openPropPanel(id){
   const p=props.find(x=>x.id===id);if(!p)return;panelType='prop';panelId=id;
   const td=today();const pt=tenants.filter(t=>t.propertyId===id&&t.leaseEnd>=td);
-  const rent=pt.reduce((s,t)=>s+(t.rent||0),0);const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);const noi=rent-exp;const occ=p.units>0?pt.length/p.units*100:0;const capRate=p.value>0?noi*12/p.value*100:0;
+  const rent=pt.reduce((s,t)=>s+(t.rent||0),0);const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);const noi=rent-exp;const leasedSF=pt.reduce((s,t)=>s+(t.sqft||0),0);const occ=p.gla>0?leasedSF/p.gla*100:0;const capRate=p.value>0?noi*12/p.value*100:0;
   document.getElementById('pname').textContent=p.name;document.getElementById('psub3').textContent=p.id+' · '+p.type;
   document.getElementById('pbody').innerHTML=`
     <div class="krow"><div class="k"><div class="kl">Value</div><div class="kv">${$s(p.value||0)}</div></div><div class="k"><div class="kl">NOI/mo</div><div class="kv" style="color:${noi>=0?'var(--green2)':'var(--red)'}">${$c(noi)}</div></div><div class="k"><div class="kl">Cap Rate</div><div class="kv">${capRate.toFixed(1)}%</div></div></div>
-    <div class="krow"><div class="k"><div class="kl">Tenants</div><div class="kv">${pt.length}/${p.units||1}</div></div><div class="k"><div class="kl">Occupancy</div><div class="kv">${occ.toFixed(0)}%</div></div><div class="k"><div class="kl">Open WOs</div><div class="kv" style="color:${maint.filter(m=>m.propId===id&&m.status!=='completed').length?'var(--red)':'var(--green2)'}">${maint.filter(m=>m.propId===id&&m.status!=='completed').length}</div></div></div>
+    <div class="krow"><div class="k"><div class="kl">Occupancy</div><div class="kv">${occ.toFixed(0)}%</div></div><div class="k"><div class="kl">Leased / GLA</div><div class="kv" style="font-size:.78rem">${leasedSFpan.toLocaleString()}/${(p.gla||0).toLocaleString()} sf</div></div><div class="k"><div class="kl">Open WOs</div><div class="kv" style="color:${maint.filter(m=>m.propId===id&&m.status!=='completed').length?'var(--red)':'var(--green2)'}">${maint.filter(m=>m.propId===id&&m.status!=='completed').length}</div></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.73rem;margin-bottom:13px;color:var(--text2)">${[['Type',p.type],['Units',p.units||1],['GLA',p.gla?p.gla.toLocaleString()+' sqft':'—'],['Year',p.year||'—'],['Purchase',$s(p.price||0)],['Manager',p.mgr||'—'],['Tax/mo',$c(p.tax||0)],['Insurance/mo',$c(p.ins||0)],['Utilities/mo',$c(p.util||0)],['Mgmt/mo',$c(p.mgmtfee||0)]].map(([k,v])=>`<div><div style="font-size:.57rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">${k}</div><div style="font-weight:500;color:var(--text);margin-top:2px">${v}</div></div>`).join('')}</div>
     ${p.notes?`<div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:9px;font-size:.72rem;color:var(--text2);margin-bottom:12px">${p.notes}</div>`:''}
     <div style="font-size:.57rem;color:var(--green2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Active Tenants</div>
@@ -1825,19 +1839,64 @@ function renderTBody(tab){
   } else if(tab==='rentroll'){
     el.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Property</th><th>Unit</th><th>Tenant</th><th>Sqft</th><th>$/sqft/yr</th><th>Type</th><th>Rent</th><th>Start</th><th>End</th><th>Days Left</th><th>Status</th></tr></thead><tbody>${tenants.map(t=>{const dL=Math.ceil((new Date(t.leaseEnd+'T12:00:00')-new Date())/86400000);const psf=t.sqft&&t.rent?((t.rent*12)/t.sqft).toFixed(2):'—';return`<tr><td>${propName(t.propertyId)}</td><td>${t.unit||'—'}</td><td>${t.name}</td><td>${t.sqft?t.sqft.toLocaleString():'—'}</td><td class="mono">${psf!=='—'?'$'+psf:'—'}</td><td><span class="badge b-blue">${t.leaseType||'Gross'}</span></td><td class="mono">${$c(t.rent)}</td><td style="font-size:.71rem">${fdt(t.leaseStart)}</td><td style="font-size:.71rem">${fdt(t.leaseEnd)}</td><td style="color:${dL<=0?'var(--red)':dL<=90?'var(--amber)':'var(--green2)'}">${dL>0?dL+'d':'Exp.'}</td><td>${dL>0?'<span class="badge b-green">Active</span>':'<span class="badge b-gray">Expired</span>'}</td></tr>`;}).join('')||'<tr><td colspan="11" style="text-align:center;padding:25px;color:var(--text3)">No tenants</td></tr>'}</tbody></table></div></div>`;
   } else if(tab==='escalations'){
-    const escT=tenants.filter(t=>t.escType&&t.escType!=='none');
-    el.innerHTML=`<div class="al al-i" style="margin-bottom:14px;font-size:.73rem">Escalations apply annually on the lease start anniversary. Review and update records each year.</div><div class="card"><div class="tw"><table><thead><tr><th>Tenant</th><th>Property</th><th>Current Rent</th><th>Type</th><th>Rate</th><th>Year 2</th><th>Year 3</th><th>Year 4</th><th>Year 5</th></tr></thead><tbody>${escT.length?escT.map(t=>{const r=t.rent||0;const calc=(yr)=>t.escType==='fixed_pct'?r*Math.pow(1+(t.escRate||0)/100,yr):r;return`<tr><td>${t.name}</td><td>${propName(t.propertyId)}</td><td class="mono">${$c(r)}</td><td>${t.escType==='fixed_pct'?'Fixed %':'CPI'}</td><td>${t.escRate||0}%/yr</td>${[1,2,3,4].map(yr=>`<td class="mono" style="color:var(--green2)">${$c(calc(yr))}</td>`).join('')}</tr>`;}).join(''):'<tr><td colspan="9" style="text-align:center;padding:25px;color:var(--text3)">No escalation clauses</td></tr>'}</tbody></table></div></div>`;
+    const escT=tenants.filter(t=>(t.escType&&t.escType!=='none')||(t.rentSteps&&t.rentSteps.length));
+    el.innerHTML=`<div class="al al-i" style="margin-bottom:14px;font-size:.73rem">Fixed % escalations apply annually on the lease anniversary. Stepped rents apply the defined rent for each date range exactly.</div>
+    <div class="card"><div class="tw"><table><thead><tr><th>Tenant</th><th>Property</th><th>Base Rent</th><th>Type</th><th>Details / Schedule</th></tr></thead><tbody>${escT.length?escT.map(t=>{
+      const r=t.rent||0;
+      let details='';
+      if(t.escType==='stepped'&&t.rentSteps&&t.rentSteps.length){
+        details=t.rentSteps.map(s=>`<span style="display:inline-block;margin:1px 3px 1px 0;font-size:.65rem;background:var(--green-d);color:var(--green2);padding:1px 6px;border-radius:4px">${fdt(s.from)}→${fdt(s.to)}: ${$c(s.rent)}</span>`).join('');
+      } else if(t.escType==='fixed_pct'){
+        details=[1,2,3,4].map(yr=>`Yr${yr+1}: ${$c(r*Math.pow(1+(t.escRate||0)/100,yr))}`).join(' · ');
+      } else if(t.escType==='cpi'){
+        details=`CPI-linked @ ${t.escRate||0}%/yr (approximate)`;
+      }
+      return`<tr><td>${t.name}</td><td>${propName(t.propertyId)}</td><td class="mono">${$c(r)}/mo</td><td><span class="badge b-teal">${t.escType==='fixed_pct'?'Fixed %':t.escType==='cpi'?'CPI':t.escType==='stepped'?'Stepped':'—'}</span></td><td style="font-size:.72rem;color:var(--text2)">${details||'—'}</td></tr>`;
+    }).join(''):'<tr><td colspan="5" style="text-align:center;padding:25px;color:var(--text3)">No escalation clauses</td></tr>'}</tbody></table></div></div>`;
   }
 }
+// Rent step helpers
+let tempRentSteps=[];
+function toggleEscFields(){
+  const v=document.getElementById('ft-esc').value;
+  document.getElementById('ft-escrate-row').style.display=v==='stepped'?'none':'';
+  document.getElementById('ft-steps-panel').style.display=v==='stepped'?'':'none';
+}
+function renderRentSteps(){
+  const el=document.getElementById('ft-steps-list');if(!el)return;
+  el.innerHTML=tempRentSteps.length?tempRentSteps.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s1);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;font-size:.74rem">
+      <span style="color:var(--text2)">${fdt(s.from)} → ${fdt(s.to)}</span>
+      <span class="mono" style="font-weight:600;color:var(--green2)">${$c(s.rent)}/mo</span>
+      <button class="btn btn-danger btn-xs" style="margin-left:auto" onclick="removeRentStep(${i})">✕</button>
+    </div>`).join(''):'<div style="color:var(--text3);font-size:.72rem;padding:4px 0">No steps added yet.</div>';
+}
+function addRentStep(){
+  const from=document.getElementById('ft-step-from').value;
+  const to=document.getElementById('ft-step-to').value;
+  const rent=parseFloat(document.getElementById('ft-step-rent').value);
+  if(!from||!to||!rent||rent<=0){toast('Enter from date, to date, and rent amount','error');return;}
+  if(from>=to){toast('From date must be before to date','error');return;}
+  tempRentSteps.push({from,to,rent});
+  tempRentSteps.sort((a,b)=>a.from.localeCompare(b.from));
+  document.getElementById('ft-step-from').value='';
+  document.getElementById('ft-step-to').value='';
+  document.getElementById('ft-step-rent').value='';
+  renderRentSteps();
+}
+function removeRentStep(i){tempRentSteps.splice(i,1);renderRentSteps();}
+
 function openAddTenModal(prefill=null){
   editTenId=null;document.getElementById('tenMTitle').textContent='Add Tenant';
   document.getElementById('ft-prop').innerHTML=props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
   ['ft-name','ft-email','ft-phone','ft-unit','ft-sqft','ft-rent','ft-dep','ft-renew','ft-pct','ft-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('ft-lt').value='Gross';document.getElementById('ft-start').value=today();document.getElementById('ft-end').value='';document.getElementById('ft-pd').value='1';document.getElementById('ft-lf').value='100';document.getElementById('ft-esc').value='none';document.getElementById('ft-escrate').value='';
+  tempRentSteps=[];renderRentSteps();toggleEscFields();
   if(prefill){
     editTenId=prefill.id;document.getElementById('tenMTitle').textContent='Edit Tenant';
     const setV=(id,v)=>{const e=document.getElementById(id);if(e&&v!==undefined)e.value=v;};
     setV('ft-name',prefill.name);setV('ft-prop',prefill.propertyId);setV('ft-unit',prefill.unit);setV('ft-sqft',prefill.sqft);setV('ft-email',prefill.email);setV('ft-phone',prefill.phone);setV('ft-lt',prefill.leaseType||'Gross');setV('ft-rent',prefill.rent);setV('ft-dep',prefill.dep);setV('ft-start',prefill.leaseStart);setV('ft-end',prefill.leaseEnd);setV('ft-pd',prefill.payday||'1');setV('ft-lf',prefill.lateFee||100);setV('ft-renew',prefill.renewOptions);setV('ft-pct',prefill.pctrental);setV('ft-esc',prefill.escType||'none');setV('ft-escrate',prefill.escRate);setV('ft-notes',prefill.notes);
+    tempRentSteps=[...(prefill.rentSteps||[])];renderRentSteps();toggleEscFields();
   }
   openMod('tenMod');
 }
@@ -1845,7 +1904,7 @@ function saveTenant(){
   const name=document.getElementById('ft-name').value.trim();const pid=document.getElementById('ft-prop').value;
   const rent=parseFloat(document.getElementById('ft-rent').value);const ls=document.getElementById('ft-start').value;const le=document.getElementById('ft-end').value;
   if(!name){toast('Name required','error');return;}if(!pid){toast('Select property','error');return;}if(!rent||rent<=0){toast('Enter rent','error');return;}if(!ls||!le){toast('Lease dates required','error');return;}
-  const t={id:editTenId||uid(),name,propertyId:pid,unit:document.getElementById('ft-unit').value,sqft:parseInt(document.getElementById('ft-sqft').value)||0,email:document.getElementById('ft-email').value,phone:document.getElementById('ft-phone').value,leaseType:document.getElementById('ft-lt').value,rent,dep:parseFloat(document.getElementById('ft-dep').value)||0,leaseStart:ls,leaseEnd:le,payday:document.getElementById('ft-pd').value,lateFee:parseFloat(document.getElementById('ft-lf').value)||100,renewOptions:document.getElementById('ft-renew').value,pctrental:document.getElementById('ft-pct').value,escType:document.getElementById('ft-esc').value,escRate:parseFloat(document.getElementById('ft-escrate').value)||0,notes:document.getElementById('ft-notes').value,status:'active',createdAt:editTenId?(tenants.find(t=>t.id===editTenId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
+  const t={id:editTenId||uid(),name,propertyId:pid,unit:document.getElementById('ft-unit').value,sqft:parseInt(document.getElementById('ft-sqft').value)||0,email:document.getElementById('ft-email').value,phone:document.getElementById('ft-phone').value,leaseType:document.getElementById('ft-lt').value,rent,dep:parseFloat(document.getElementById('ft-dep').value)||0,leaseStart:ls,leaseEnd:le,payday:document.getElementById('ft-pd').value,lateFee:parseFloat(document.getElementById('ft-lf').value)||100,renewOptions:document.getElementById('ft-renew').value,pctrental:document.getElementById('ft-pct').value,escType:document.getElementById('ft-esc').value,escRate:parseFloat(document.getElementById('ft-escrate').value)||0,rentSteps:[...tempRentSteps],notes:document.getElementById('ft-notes').value,status:'active',createdAt:editTenId?(tenants.find(t=>t.id===editTenId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
   if(editTenId){const i=tenants.findIndex(x=>x.id===editTenId);if(i>=0)tenants[i]=t;log(`✏️ Updated tenant: ${name}`,'edit');toast('Updated','success');}else{tenants.push(t);log(`👤 Added: ${name} — ${$c(rent)}/mo`,'add');toast('Tenant added','success');}
   save();closeMod('tenMod');renderREDash();if(curView==='rt')renderTBody(tTab);
 }
@@ -1882,16 +1941,88 @@ function renderCAM(){
   const p=props.find(x=>x.id===pid);if(!p)return;
   const expenses=camExp.filter(c=>c.propId===pid&&c.year===year);
   const td=today();const activeTens=tenants.filter(t=>t.propertyId===pid&&t.leaseEnd>=td);
-  const totalGLA=p.gla||0;const tenantGLA=activeTens.reduce((s,t)=>s+(t.sqft||0),0);
-  const totalActual=expenses.reduce((s,c)=>s+(c.actual||0),0);const totalBudget=expenses.reduce((s,c)=>s+(c.budget||0),0);
-  const recoverable=expenses.filter(c=>c.rec==='yes').reduce((s,c)=>s+(c.actual||0),0);const variance=totalActual-totalBudget;
-  el.innerHTML=`<div class="krow krow4" style="margin-bottom:16px"><div class="k"><div class="kl">Total Actual (${year})</div><div class="kv" style="color:var(--amber)">${$c(totalActual)}</div></div><div class="k"><div class="kl">Budget</div><div class="kv">${$c(totalBudget)}</div></div><div class="k"><div class="kl">Variance</div><div class="kv" style="color:${variance>0?'var(--red)':'var(--green2)'}">${variance>0?'+':''}${$c(variance)}</div></div><div class="k"><div class="kl">Recoverable</div><div class="kv" style="color:var(--blue)">${$c(recoverable)}</div></div></div>
+  const totalGLA=p.gla||0;
+  const totalActual=expenses.reduce((s,c)=>s+(c.actual||0),0);
+  const totalBudget=expenses.reduce((s,c)=>s+(c.budget||0),0);
+  const variance=totalActual-totalBudget;
+  // Categorise expenses for lease-type-specific recovery
+  const taxExp=expenses.filter(c=>c.cat==='Property Tax'&&c.rec==='yes').reduce((s,c)=>s+(c.actual||0),0);
+  const insExp=expenses.filter(c=>c.cat==='Insurance'&&c.rec==='yes').reduce((s,c)=>s+(c.actual||0),0);
+  const camOnly=expenses.filter(c=>c.rec==='yes'&&c.cat!=='Property Tax'&&c.cat!=='Insurance').reduce((s,c)=>s+(c.actual||0),0);
+  const allRec=taxExp+insExp+camOnly;
+  function tenRecoverable(lt,share){
+    const t=(lt||'Gross').toUpperCase();
+    if(t==='NNN'||t==='PERCENTAGE') return allRec*share;
+    if(t==='NN') return (taxExp+insExp)*share;
+    if(t==='NET'||t==='N') return taxExp*share;
+    if(t==='MODIFIED GROSS') return camOnly*share;
+    return 0; // Gross — landlord pays all
+  }
+  let totalRecovered=0;
+  activeTens.forEach(t=>{
+    const share=totalGLA>0?(t.sqft||0)/totalGLA:0;
+    totalRecovered+=tenRecoverable(t.leaseType,share);
+  });
+  const landlordCost=allRec-totalRecovered;
+  const leasedSqft=activeTens.reduce((s,t)=>s+(t.sqft||0),0);
+  el.innerHTML=`<div class="krow krow4" style="margin-bottom:16px">
+    <div class="k"><div class="kl">Total Actual (${year})</div><div class="kv" style="color:var(--amber)">${$c(totalActual)}</div></div>
+    <div class="k"><div class="kl">Budget</div><div class="kv">${$c(totalBudget)}</div></div>
+    <div class="k"><div class="kl">Variance</div><div class="kv" style="color:${variance>0?'var(--red)':'var(--green2)'}"> ${variance>0?'+':''}${$c(variance)}</div></div>
+    <div class="k"><div class="kl">Tenant Recovery</div><div class="kv" style="color:var(--blue)">${$c(totalRecovered)}</div></div>
+  </div>
+  <div class="al al-i" style="margin-bottom:14px;font-size:.72rem">
+    <strong>Recovery rules:</strong> NNN = all expenses &nbsp;·&nbsp; NN = tax + insurance &nbsp;·&nbsp; Net = tax only &nbsp;·&nbsp; Gross = $0 (landlord pays all) &nbsp;·&nbsp; Modified Gross = CAM only
+  </div>
   <div class="g2" style="margin-bottom:16px">
-    <div class="card"><div class="ch"><div class="ct">CAM Expenses — ${p.name} (${year})</div></div><div class="cb" style="padding:0"><div class="cam-row" style="font-size:.59rem;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1.5px solid var(--border);padding:7px 14px;background:var(--s2)"><div>Category</div><div>Budget</div><div>Actual</div><div>Variance</div><div>Recover</div></div>${expenses.length?expenses.map(c=>{const v=c.actual-c.budget;return`<div class="cam-row" style="padding:7px 14px"><div style="font-weight:500">${c.cat}<div style="font-size:.61rem;color:var(--text3)">${c.notes||''}</div></div><div class="mono">${$c(c.budget)}</div><div class="mono">${$c(c.actual)}</div><div class="mono" style="color:${v>0?'var(--red)':'var(--green2)'}">${v>0?'+':''}${$c(v)}</div><div>${c.rec==='yes'?'<span class="badge b-green">Yes</span>':'<span class="badge b-gray">No</span>'}</div></div>`;}).join(''):'<div style="text-align:center;padding:25px;color:var(--text3);font-size:.74rem">No expenses added yet.</div>'}</div></div>
-    <div class="card"><div class="ch"><div class="ct">CAM Reconciliation</div><div class="csub">Pro-rata tenant allocation</div></div><div class="cb"><div class="al al-i" style="margin-bottom:12px;font-size:.72rem">Building GLA: <strong>${totalGLA.toLocaleString()} sqft</strong> · Tenant GLA: <strong>${tenantGLA.toLocaleString()} sqft</strong> · Coverage: <strong>${totalGLA>0?(tenantGLA/totalGLA*100).toFixed(0):0}%</strong></div>${activeTens.length?activeTens.map(t=>{const share=totalGLA>0?(t.sqft||0)/totalGLA:0;const tenCAM=recoverable*share;return`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.74rem"><div><div style="font-weight:500">${t.name}</div><div style="font-size:.61rem;color:var(--text3)">${(t.sqft||0).toLocaleString()} sf · ${(share*100).toFixed(1)}% share</div></div><div class="mono" style="color:var(--blue)">${$c(tenCAM)}/yr</div></div>`;}).join(''):'<div style="color:var(--text3);font-size:.73rem">No active tenants.</div>'}${expenses.length&&activeTens.length?`<div class="al al-s" style="margin-top:11px;font-size:.72rem">Recovery: ${totalActual>0?(recoverable/totalActual*100).toFixed(0):0}% of expenses recoverable. Annual recovery: ${$c(recoverable)}</div>`:''}
-    </div></div>
+    <div class="card"><div class="ch"><div class="ct">CAM Expenses — ${p.name} (${year})</div></div>
+      <div class="cb" style="padding:0">
+        <div class="cam-row" style="font-size:.59rem;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1.5px solid var(--border);padding:7px 14px;background:var(--s2)">
+          <div>Category</div><div>Budget</div><div>Actual</div><div>Variance</div><div>Recover</div></div>
+        ${expenses.length?expenses.map(c=>{const v=c.actual-c.budget;return`<div class="cam-row" style="padding:7px 14px">
+          <div style="font-weight:500">${c.cat}<div style="font-size:.61rem;color:var(--text3)">${c.notes||''}</div></div>
+          <div class="mono">${$c(c.budget)}</div><div class="mono">${$c(c.actual)}</div>
+          <div class="mono" style="color:${v>0?'var(--red)':'var(--green2)'}">${v>0?'+':''}${$c(v)}</div>
+          <div>${c.rec==='yes'?'<span class="badge b-green">Yes</span>':'<span class="badge b-gray">No</span>'}</div></div>`;
+        }).join(''):'<div style="text-align:center;padding:25px;color:var(--text3);font-size:.74rem">No expenses added yet.</div>'}
+      </div>
+    </div>
+    <div class="card"><div class="ch"><div class="ct">Recovery by Tenant</div><div class="csub">Allocated by lease type &amp; sqft share</div></div>
+      <div class="cb">
+        <div class="al al-i" style="margin-bottom:11px;font-size:.71rem">
+          GLA: <strong>${(totalGLA||0).toLocaleString()} sqft</strong> &nbsp;·&nbsp;
+          Leased: <strong>${leasedSqft.toLocaleString()} sqft</strong> &nbsp;·&nbsp;
+          Occupancy: <strong>${totalGLA>0?((leasedSqft/totalGLA)*100).toFixed(0):0}%</strong>
+        </div>
+        ${activeTens.length?`
+          <div style="display:grid;grid-template-columns:1fr 55px 55px 80px 90px;gap:6px;font-size:.58rem;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:3px">
+            <div>Tenant / Lease Type</div><div>Sqft</div><div>Share</div><div>Basis</div><div>Annual CAM</div></div>
+          ${activeTens.map(t=>{
+            const share=totalGLA>0?(t.sqft||0)/totalGLA:0;
+            const tenCAM=tenRecoverable(t.leaseType,share);
+            const lt=(t.leaseType||'Gross').toUpperCase();
+            const ltColor=lt==='NNN'?'var(--red)':lt==='NN'||lt==='NET'?'var(--amber)':lt==='GROSS'?'var(--green2)':'var(--blue)';
+            const basis=lt==='NNN'?'All':lt==='NN'?'Tax+Ins':lt==='NET'||lt==='N'?'Tax':lt==='GROSS'?'None':'CAM';
+            return`<div style="display:grid;grid-template-columns:1fr 55px 55px 80px 90px;gap:6px;padding:8px 0;border-bottom:1px solid var(--border);font-size:.73rem;align-items:center">
+              <div><div style="font-weight:600">${t.name}</div>
+                <span style="font-size:.6rem;font-weight:700;color:${ltColor}">${t.leaseType||'Gross'}</span></div>
+              <div class="mono">${(t.sqft||0).toLocaleString()}</div>
+              <div class="mono">${(share*100).toFixed(1)}%</div>
+              <div style="font-size:.66rem;color:var(--text3)">${basis}</div>
+              <div class="mono" style="color:var(--blue);font-weight:600">${$c(tenCAM)}/yr</div></div>`;
+          }).join('')}
+          <div style="display:grid;grid-template-columns:1fr 55px 55px 80px 90px;gap:6px;padding:8px 0;border-top:1.5px solid var(--border);font-size:.73rem">
+            <div style="font-weight:700">Tenant Total</div><div></div><div></div><div></div>
+            <div class="mono" style="font-weight:700;color:var(--blue)">${$c(totalRecovered)}/yr</div></div>
+          <div class="al al-${landlordCost>0?'w':'s'}" style="margin-top:9px;font-size:.71rem">
+            Landlord bears: <strong>${$c(landlordCost)}/yr</strong>
+            (${allRec>0?(landlordCost/allRec*100).toFixed(0):0}% — Gross/Modified Gross tenants + non-recoverable)
+          </div>`:'<div style="color:var(--text3);font-size:.73rem">No active tenants.</div>'}
+      </div>
+    </div>
   </div>`;
 }
+
 function openCAMModal(){document.getElementById('ce-prop').innerHTML=props.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');document.getElementById('ce-year').value=new Date().getFullYear();['ce-amt','ce-budget','ce-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('ce-cat').value='Property Tax';document.getElementById('ce-rec').value='yes';openMod('camMod');}
 function saveCAM(){const pid=document.getElementById('ce-prop').value;if(!pid){toast('Select property','error');return;}camExp.push({id:uid(),propId:pid,year:parseInt(document.getElementById('ce-year').value)||new Date().getFullYear(),cat:document.getElementById('ce-cat').value,actual:parseFloat(document.getElementById('ce-amt').value)||0,budget:parseFloat(document.getElementById('ce-budget').value)||0,rec:document.getElementById('ce-rec').value,notes:document.getElementById('ce-notes').value});save();toast('Expense saved','success');closeMod('camMod');renderCAM();log(`💼 CAM expense added`,'add');}
 
@@ -1913,7 +2044,7 @@ function renderRR(tab){
   const el=document.getElementById('rrBody');tab=tab||rrTab;const td=today();
   if(!props.length){el.innerHTML='<div style="text-align:center;padding:60px;color:var(--text3)">Add properties to see reports.</div>';return;}
   if(tab==='noi'){el.innerHTML=`<div class="card"><div class="ch"><div class="ct">NOI by Property</div></div><div class="tw"><table><thead><tr><th>Property</th><th>Type</th><th>GLA</th><th>Gross Rent</th><th>Tax</th><th>Insurance</th><th>Utilities</th><th>Mgmt</th><th>Other</th><th>Total Exp</th><th>NOI/mo</th><th>NOI/yr</th><th>Cap Rate</th></tr></thead><tbody>${props.map(p=>{const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);const rent=pt.reduce((s,t)=>s+(t.rent||0),0);const exp=(p.tax||0)+(p.ins||0)+(p.util||0)+(p.mgmtfee||0)+(p.land||0)+(p.other||0);const noi=rent-exp;const cap=p.value>0?noi*12/p.value*100:0;return`<tr><td>${p.name}</td><td>${p.type}</td><td>${p.gla?p.gla.toLocaleString():'-'}</td><td class="mono">${$c(rent)}</td><td class="mono">${$c(p.tax||0)}</td><td class="mono">${$c(p.ins||0)}</td><td class="mono">${$c(p.util||0)}</td><td class="mono">${$c(p.mgmtfee||0)}</td><td class="mono">${$c((p.land||0)+(p.other||0))}</td><td class="mono">${$c(exp)}</td><td class="mono" style="font-weight:600;color:${noi>=0?'var(--green2)':'var(--red)'}">${$c(noi)}</td><td class="mono">${$s(noi*12)}</td><td>${cap.toFixed(1)}%</td></tr>`;}).join('')}</tbody></table></div></div>`;}
-  else if(tab==='occupancy'){el.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Property</th><th>Units</th><th>Occupied</th><th>Vacant</th><th>Occupancy</th><th>Actual Rent</th><th>Vacancy Loss</th></tr></thead><tbody>${props.map(p=>{const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);const vac=Math.max(0,(p.units||1)-pt.length);const occ=p.units>0?pt.length/p.units*100:0;const actual=pt.reduce((s,t)=>s+(t.rent||0),0);const avg=pt.length>0?actual/pt.length:0;const loss=avg*vac;return`<tr><td>${p.name}</td><td>${p.units||1}</td><td style="color:var(--green2)">${pt.length}</td><td style="color:${vac>0?'var(--red)':'var(--text2)'}">${vac}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pb" style="width:55px"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div>${occ.toFixed(0)}%</div></td><td class="mono">${$c(actual)}</td><td class="mono" style="color:${loss>0?'var(--red)':'var(--green2)'}">${$c(loss)}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
+  else if(tab==='occupancy'){el.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Property</th><th>Total GLA</th><th>Leased Sqft</th><th>Vacant Sqft</th><th>Occupancy</th><th>Actual Rent</th><th>Avg $/sqft/yr</th></tr></thead><tbody>${props.map(p=>{const pt=tenants.filter(t=>t.propertyId===p.id&&t.leaseEnd>=td);const gla=p.gla||0;const leased=pt.reduce((s,t)=>s+(t.sqft||0),0);const vacant=Math.max(0,gla-leased);const occ=gla>0?leased/gla*100:0;const actual=pt.reduce((s,t)=>s+(t.rent||0),0);const psf=leased>0?(actual*12/leased).toFixed(2):'—';return`<tr><td>${p.name}</td><td class="mono">${gla.toLocaleString()} sf</td><td class="mono" style="color:var(--green2)">${leased.toLocaleString()} sf</td><td class="mono" style="color:${vacant>0?'var(--red)':'var(--text2)'}">${vacant.toLocaleString()} sf</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pb" style="width:55px"><div class="pf" style="width:${occ}%;background:${occ>80?'var(--green2)':occ>50?'var(--amber)':'var(--red)'}"></div></div>${occ.toFixed(0)}%</div></td><td class="mono">${$c(actual)}</td><td class="mono">${psf!=='—'?'$'+psf:'—'}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
   else if(tab==='rentroll'){el.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Property</th><th>Unit</th><th>Tenant</th><th>Sqft</th><th>$/sqft/yr</th><th>Type</th><th>Rent</th><th>Start</th><th>End</th><th>Days Left</th><th>Status</th></tr></thead><tbody>${tenants.map(t=>{const dL=Math.ceil((new Date(t.leaseEnd+'T12:00:00')-new Date())/86400000);const psf=t.sqft&&t.rent?((t.rent*12)/t.sqft).toFixed(2):'—';return`<tr><td>${propName(t.propertyId)}</td><td>${t.unit||'—'}</td><td>${t.name}</td><td>${t.sqft?t.sqft.toLocaleString():'—'}</td><td class="mono">${psf!=='—'?'$'+psf:'—'}</td><td><span class="badge b-blue">${t.leaseType||'Gross'}</span></td><td class="mono">${$c(t.rent)}</td><td style="font-size:.7rem">${fdt(t.leaseStart)}</td><td style="font-size:.7rem">${fdt(t.leaseEnd)}</td><td style="color:${dL<=0?'var(--red)':dL<=90?'var(--amber)':'var(--green2)'}">${dL>0?dL+'d':'Exp.'}</td><td>${dL>0?'<span class="badge b-green">Active</span>':'<span class="badge b-gray">Expired</span>'}</td></tr>`;}).join('')||'<tr><td colspan="11" style="text-align:center;padding:25px;color:var(--text3)">No tenants</td></tr>'}</tbody></table></div></div>`;}
   else if(tab==='cam'){const yr=new Date().getFullYear();el.innerHTML=`<div class="card"><div class="tw"><table><thead><tr><th>Property</th><th>GLA</th><th>Total CAM (${yr})</th><th>Recoverable</th><th>Landlord Cost</th><th>Recovery Rate</th><th>Entries</th></tr></thead><tbody>${props.map(p=>{const exp=camExp.filter(c=>c.propId===p.id&&c.year===yr);const total=exp.reduce((s,c)=>s+(c.actual||0),0);const rec=exp.filter(c=>c.rec==='yes').reduce((s,c)=>s+(c.actual||0),0);const rr=total>0?rec/total*100:0;return`<tr onclick="sv('rcam',document.getElementById('ni-rcam'));setTimeout(()=>{document.getElementById('camSel').value='${p.id}';renderCAM();},50)"><td>${p.name}</td><td>${p.gla?p.gla.toLocaleString()+' sf':'—'}</td><td class="mono">${$c(total)}</td><td class="mono" style="color:var(--blue)">${$c(rec)}</td><td class="mono" style="color:var(--red)">${$c(total-rec)}</td><td><div style="display:flex;align-items:center;gap:6px"><div class="pb" style="width:50px"><div class="pf" style="width:${rr}%;background:var(--blue)"></div></div>${rr.toFixed(0)}%</div></td><td>${exp.length}</td></tr>`;}).join('')}</tbody></table></div></div>`;}
   else if(tab==='maint'){const total=maint.reduce((s,m)=>s+(m.cost||0),0);const byCat={};maint.forEach(m=>{const c=m.category||'Other';if(!byCat[c])byCat[c]={count:0,cost:0};byCat[c].count++;byCat[c].cost+=(m.cost||0);});el.innerHTML=`<div class="stats-row" style="margin-bottom:16px"><div class="sc"><div class="sc-label">Total WOs</div><div class="sc-val">${maint.length}</div></div><div class="sc"><div class="sc-label">Open</div><div class="sc-val" style="color:var(--red)">${maint.filter(m=>m.status==='open').length}</div></div><div class="sc"><div class="sc-label">Completed</div><div class="sc-val" style="color:var(--green2)">${maint.filter(m=>m.status==='completed').length}</div></div><div class="sc"><div class="sc-label">Total Cost</div><div class="sc-val" style="color:var(--amber)">${$s(total)}</div></div></div><div class="card"><div class="tw"><table><thead><tr><th>Category</th><th>Count</th><th>Total Cost</th><th>Avg Cost</th></tr></thead><tbody>${Object.entries(byCat).sort((a,b)=>b[1].cost-a[1].cost).map(([cat,d])=>`<tr><td>${cat}</td><td>${d.count}</td><td class="mono">${$c(d.cost)}</td><td class="mono">${$c(d.cost/d.count)}</td></tr>`).join('')}</tbody></table></div></div>`;}
