@@ -444,11 +444,12 @@ td:first-child{color:var(--text);font-weight:500;}
           <div class="fg"><div class="fl">Loan Start Date *</div><input class="fi" id="fl-start" type="date"></div>
           <div class="fg"><div class="fl">Term *</div><div style="display:flex;gap:7px"><input class="fi mono" id="fl-term" type="number" placeholder="60" oninput="lPreview()" style="flex:1"><select class="fs" id="fl-tu" style="width:100px" onchange="lPreview()"><option value="months">Months</option><option value="years">Years</option></select></div></div>
           <div class="fg"><div class="fl">Maturity / End Date</div><input class="fi" id="fl-maturity" type="date"><div style="font-size:.61rem;color:var(--text3);margin-top:3px">Override calculated maturity</div></div>
-          <div class="fg"><div class="fl">Day Count</div><select class="fs" id="fl-dc"><option value="actual365">Actual/365</option><option value="actual360">Actual/360</option><option value="30_360">30/360</option></select></div>
+          <div class="fg"><div class="fl">Day Count</div><select class="fs" id="fl-dc" onchange="lPreview()"><option value="actual365">Actual/365</option><option value="actual360">Actual/360</option><option value="30_360">30/360</option></select></div>
         </div>
         <div id="lPreviewBox" style="display:none;margin-top:14px;background:var(--s2);border:1px solid rgba(22,163,74,.2);border-radius:8px;padding:13px">
-          <div style="font-size:.59rem;color:var(--green2);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:9px">Payment Preview</div>
-          <div class="g3c"><div><div style="font-size:.61rem;color:var(--text3)">Monthly Payment</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--green2);margin-top:3px" id="pp-pmt">—</div></div><div><div style="font-size:.61rem;color:var(--text3)">Total Interest</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--amber);margin-top:3px" id="pp-int">—</div></div><div><div style="font-size:.61rem;color:var(--text3)">Total Cost</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--text);margin-top:3px" id="pp-tot">—</div></div></div>
+          <div style="font-size:.59rem;color:var(--green2);text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:9px">Payment Preview (Blended)</div>
+          <div class="g3c"><div><div style="font-size:.61rem;color:var(--text3)">Avg Monthly Payment</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--green2);margin-top:3px" id="pp-pmt">—</div></div><div><div style="font-size:.61rem;color:var(--text3)">Total Interest</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--amber);margin-top:3px" id="pp-int">—</div></div><div><div style="font-size:.61rem;color:var(--text3)">Total Cost</div><div class="mono" style="font-size:.98rem;font-weight:700;color:var(--text);margin-top:3px" id="pp-tot">—</div></div></div>
+          <div id="pp-dc-note" style="font-size:.63rem;color:var(--text3);margin-top:8px;font-style:italic"></div>
         </div>
       </div>
       <div id="lmt-payment" style="display:none">
@@ -805,9 +806,12 @@ function allLoanDraws(loan){
   return [...(loan.tranches||[]),...(loan.draws||[])].sort((a,b)=>a.date.localeCompare(b.date));
 }
 function totalDrawn(loan){
-  const draws=allLoanDraws(loan);
-  if(!draws.length)return loan.amount||0;
-  return draws.reduce((s,d)=>s+(d.amount||0),0);
+  const upfront=loan.tranches||[];
+  const postDraws=loan.draws||[];
+  // Non-tranched: full loan amount was drawn at start, plus any post-setup draws
+  if(!upfront.length) return (loan.amount||0)+postDraws.reduce((s,d)=>s+(d.amount||0),0);
+  // Tranched: only the tranche amounts count as drawn, plus post-setup draws
+  return upfront.reduce((s,t)=>s+(t.amount||0),0)+postDraws.reduce((s,d)=>s+(d.amount||0),0);
 }
 
 // ═══════════════════════════════════════════════
@@ -829,7 +833,9 @@ function buildSchedule(loan){
   const startDate=loan.startDate;
   const dc=loan.daycount||'actual365';
   const draws=allLoanDraws(loan);
-  const hasTranches=draws.length>0;
+  // hasTranches is true ONLY when upfront tranches exist (loan starts at $0 and builds up).
+  // Post-setup draws (loan.draws) always ADD to an existing balance — they never replace it.
+  const hasTranches=!!(loan.tranches&&loan.tranches.length);
 
   // Build payment due dates
   const dueDates=[];
@@ -1332,13 +1338,36 @@ function lPreview(){
   const r=document.getElementById('fl-rtype').value==='floating'?rFl:rF;
   const t=parseInt(document.getElementById('fl-term').value);
   const u=document.getElementById('fl-tu').value;
+  const dc=document.getElementById('fl-dc').value;
+  const freq=document.getElementById('fl-freq')?.value||'monthly';
   if(!a||!r||!t){document.getElementById('lPreviewBox').style.display='none';return;}
-  const tm=u==='years'?t*12:t; const rMo=r/100/12;
-  const pmt=rMo===0?a/tm:a*(rMo*Math.pow(1+rMo,tm))/(Math.pow(1+rMo,tm)-1);
+  const tm=u==='years'?t*12:t;
+  // Calculate rate per period based on day count convention
+  // Actual/365: avg month = 365.25/12 days; Actual/360: same days but /360; 30/360: exactly 30/360
+  const ppy=PPY[freq]||12;
+  let rPeriod;
+  if(dc==='actual360'){
+    // Actual/360 charges more interest — avg days per period / 360
+    const avgDays=365.25/ppy;
+    rPeriod=r/100/360*avgDays;
+  } else if(dc==='30_360'){
+    // 30/360: each period is exactly 30/360 of a year for monthly, etc.
+    rPeriod=r/100/ppy;
+  } else {
+    // Actual/365 (default): avg days per period / 365
+    const avgDays=365/ppy;
+    rPeriod=r/100/365*avgDays;
+  }
+  const n=Math.round(tm/12*ppy);
+  const pmt=rPeriod===0?a/n:a*(rPeriod*Math.pow(1+rPeriod,n))/(Math.pow(1+rPeriod,n)-1);
+  const dcLabel=dc==='actual360'?'Actual/360 — slightly higher than Actual/365':dc==='30_360'?'30/360 — equal payments every period':'Actual/365 — payments vary by days in month';
   document.getElementById('pp-pmt').textContent=$c(pmt);
-  document.getElementById('pp-int').textContent=$c(pmt*tm-a);
-  document.getElementById('pp-tot').textContent=$c(pmt*tm);
+  document.getElementById('pp-int').textContent=$c(pmt*n-a);
+  document.getElementById('pp-tot').textContent=$c(pmt*n);
   document.getElementById('lPreviewBox').style.display='';
+  // Show day count note
+  const noteEl=document.getElementById('pp-dc-note');
+  if(noteEl) noteEl.textContent=dcLabel;
 }
 function updatePayDesc(){
   const v=document.getElementById('fl-pt').value;
