@@ -1158,37 +1158,22 @@ function setLF(v,el){lf=v;document.querySelectorAll('#lpills .pill').forEach(p=>
 // ═══════════════════════════════════════════════
 function populateSchedSel(){
   const s=document.getElementById('ssel');const c=s.value;
-  s.innerHTML='<option value="">— Select loan —</option>'+loans.map(l=>`<option value="${l.id}">${l.borrower} (${l.id})</option>`).join('');
-  s.value=c; if(c)renderSched();
+  s.innerHTML='<option value="">— Select loan —</option><option value="all">★ All Loans (combined view)</option>'+loans.map(l=>`<option value="${l.id}">${l.borrower} (${l.id})</option>`).join('');
+  if(c)s.value=c; if(s.value)renderSched();
 }
 function setSF(v,el){sf2=v;document.querySelectorAll('#spills .pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderSched();}
-function renderSched(){
-  const id=document.getElementById('ssel').value;
-  const body=document.getElementById('amortBody');const kpis=document.getElementById('skpis');
-  if(!id){body.innerHTML='<div style="text-align:center;padding:50px;color:var(--text3)">Select a loan above.</div>';kpis.style.display='none';return;}
-  const loan=loans.find(l=>l.id===id); if(!loan)return;
+
+// Build the HTML rows for one loan's schedule (reused for single and all-loans view)
+function buildSchedRows(loan,sf){
   const{rows,eventRows}=buildSchedule(loan); const td=today();
-  if(!rows.length){body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">No schedule — check loan term and start date.</div>';kpis.style.display='none';return;}
-  const paidRows=rows.filter(r=>r.status==='paid');
-  const totalPaid=paidRows.reduce((s,r)=>s+(r.paidAmount||r.payment),0);
-  const paidInt=paidRows.reduce((s,r)=>s+r.interest,0);
-  const totalInt=rows.reduce((s,r)=>s+r.interest,0);
-  const nxt=rows.find(r=>r.status==='pending');
-  kpis.style.display='grid';
-  kpis.innerHTML=`
-    <div class="k"><div class="kl">Total Paid</div><div class="kv" style="color:var(--green2)">${$c(totalPaid)}</div></div>
-    <div class="k"><div class="kl">Interest Paid</div><div class="kv" style="color:var(--amber)">${$c(paidInt)}</div></div>
-    <div class="k"><div class="kl">Total Interest</div><div class="kv">${$c(totalInt)}</div></div>
-    <div class="k"><div class="kl">Payments</div><div class="kv">${paidRows.length}/${rows.length}</div></div>
-    <div class="k"><div class="kl">Balance</div><div class="kv">${$c(loanBal(loan))}</div></div>
-    <div class="k"><div class="kl">${loan.ptype==='accrual'?'Total Accrued':'Next Due'}</div><div class="kv" style="font-size:.8rem">${loan.ptype==='accrual'?$c(totalInt):nxt?fdt(nxt.dueDate):'Complete'}</div></div>`;
+  if(!rows.length) return'';
+  const id=loan.id;
   const firstPending=rows.find(r=>r.status==='pending');
-  // Filter which payment period numbers are visible under current filter
   let visNums=new Set(rows.map(r=>r.num));
-  if(sf2==='upcoming')visNums=new Set(rows.filter(r=>r.status==='pending'&&r.dueDate>=td).map(r=>r.num));
-  else if(sf2==='past')visNums=new Set(rows.filter(r=>r.status==='paid'||r.dueDate<td).map(r=>r.num));
-  else if(sf2==='missed')visNums=new Set(rows.filter(r=>r.status==='missed').map(r=>r.num));
-  const visEvts=sf2==='all'?eventRows:eventRows.filter(er=>er.type==='payment'?visNums.has(er.row.num):visNums.has(er.periodNum));
+  if(sf==='upcoming')visNums=new Set(rows.filter(r=>r.status==='pending'&&r.dueDate>=td).map(r=>r.num));
+  else if(sf==='past')visNums=new Set(rows.filter(r=>r.status==='paid'||r.dueDate<td).map(r=>r.num));
+  else if(sf==='missed')visNums=new Set(rows.filter(r=>r.status==='missed').map(r=>r.num));
+  const visEvts=sf==='all'?eventRows:eventRows.filter(er=>er.type==='payment'?visNums.has(er.row.num):visNums.has(er.periodNum));
   let html='';
   for(const er of visEvts){
     if(er.type==='draw'){
@@ -1221,7 +1206,6 @@ function renderSched(){
         :loan.ptype==='accrual'
         ?`<span class="badge b-blue" style="font-size:.53rem">Accruing</span>`
         :`<button class="btn btn-green btn-xs" onclick="openPayRow('${id}',${row.num-1})">Pay</button>`;
-      // Show sub-period interest breakdown when period contains events (draws/prepays/rate changes)
       const hasBreakdown=row.subPeriods&&row.subPeriods.length>1;
       let breakdown='';
       if(hasBreakdown){
@@ -1242,14 +1226,90 @@ function renderSched(){
         <div style="font-size:.7rem;color:${isOvr?'var(--red)':'var(--text2)'}">${fdt(row.dueDate)}</div>
         <div class="mono">${$c(loan.ptype==='accrual'?0:row.payment)}</div>
         <div class="mono">${$c(row.principal)}</div>
-        <div class="mono" style="color:var(--amber)">${$c(row.interest)}${hasBreakdown?'<span title="Interest calculated across '+row.subPeriods.length+' sub-periods" style="color:var(--blue);margin-left:3px;font-size:.55rem;cursor:help">ⓘ</span>':''}</div>
+        <div class="mono" style="color:var(--amber)">${$c(row.interest)}${hasBreakdown?`<span title="Calculated across ${row.subPeriods.length} sub-periods" style="color:var(--blue);margin-left:3px;font-size:.55rem;cursor:help">ⓘ</span>`:''}</div>
         <div class="mono" style="font-weight:600">${$c(row.balance)}</div>
         <div>${action}</div>
         ${breakdown}
       </div>`;
     }
   }
-  body.innerHTML=html||'<div style="text-align:center;padding:30px;color:var(--text3)">No payments match filter.</div>';
+  return html;
+}
+
+function renderSched(){
+  const id=document.getElementById('ssel').value;
+  const body=document.getElementById('amortBody');const kpis=document.getElementById('skpis');
+  if(!id){body.innerHTML='<div style="text-align:center;padding:50px;color:var(--text3)">Select a loan above.</div>';kpis.style.display='none';return;}
+
+  // ── ALL LOANS combined view ──
+  if(id==='all'){
+    if(!loans.length){body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">No loans added yet.</div>';kpis.style.display='none';return;}
+    // Aggregate KPIs across all loans
+    let totPaid=0,totPaidInt=0,totInt=0,totPaidCount=0,totRows=0,totBal=0;
+    loans.forEach(l=>{
+      const{rows}=buildSchedule(l);
+      const pr=rows.filter(r=>r.status==='paid');
+      totPaid+=pr.reduce((s,r)=>s+(r.paidAmount||r.payment),0);
+      totPaidInt+=pr.reduce((s,r)=>s+r.interest,0);
+      totInt+=rows.reduce((s,r)=>s+r.interest,0);
+      totPaidCount+=pr.length; totRows+=rows.length;
+      totBal+=loanBal(l);
+    });
+    kpis.style.display='grid';
+    kpis.innerHTML=`
+      <div class="k"><div class="kl">Total Paid</div><div class="kv" style="color:var(--green2)">${$c(totPaid)}</div></div>
+      <div class="k"><div class="kl">Interest Paid</div><div class="kv" style="color:var(--amber)">${$c(totPaidInt)}</div></div>
+      <div class="k"><div class="kl">Total Interest</div><div class="kv">${$c(totInt)}</div></div>
+      <div class="k"><div class="kl">Payments</div><div class="kv">${totPaidCount}/${totRows}</div></div>
+      <div class="k"><div class="kl">Portfolio Balance</div><div class="kv">${$c(totBal)}</div></div>
+      <div class="k"><div class="kl">Loans Shown</div><div class="kv">${loans.length}</div></div>`;
+    // Render each loan with a coloured header divider
+    let html='';
+    loans.forEach(loan=>{
+      const{rows}=buildSchedule(loan);
+      const st=loanStatus(loan); const bal=loanBal(loan);
+      const nxt=nextPmt(loan);
+      const stColors={active:'var(--green2)',overdue:'var(--red)',paid:'var(--blue)',closed:'var(--text3)',pending:'var(--amber)'};
+      const c=stColors[st]||'var(--text3)';
+      html+=`<div style="display:grid;grid-template-columns:36px 95px 88px 88px 88px 100px 110px;gap:4px;padding:9px 12px;background:var(--s2);border-top:2px solid ${c};border-bottom:1px solid var(--border);align-items:center">
+        <div style="color:${c};font-size:.7rem">▶</div>
+        <div style="grid-column:2/5">
+          <div style="font-weight:700;color:var(--text);font-size:.82rem">${loan.borrower}</div>
+          <div style="font-size:.61rem;color:var(--text3);font-family:'IBM Plex Mono',monospace">${loan.id} · ${loan.type||''} · ${$p(effectiveRate(loan))} · ${loan.ptype==='accrual'?'Accrual':loan.ptype==='interest_only'?'Int. Only':'Blended'}</div>
+        </div>
+        <div class="mono" style="font-size:.72rem;color:var(--text3)">Balance</div>
+        <div class="mono" style="font-weight:700;font-size:.82rem">${$c(bal)}</div>
+        <div style="display:flex;gap:5px;align-items:center">
+          ${stBadge(st)}
+          <button class="btn btn-ghost btn-xs" onclick="viewSched('${loan.id}')" style="font-size:.6rem;padding:2px 6px">Solo</button>
+        </div>
+      </div>`;
+      const rows2=buildSchedRows(loan,sf2);
+      html+=rows2||`<div style="padding:12px 16px;font-size:.73rem;color:var(--text3)">No payments match this filter for this loan.</div>`;
+    });
+    body.innerHTML=html;
+    return;
+  }
+
+  // ── SINGLE LOAN view ──
+  const loan=loans.find(l=>l.id===id); if(!loan)return;
+  const{rows}=buildSchedule(loan); const td=today();
+  if(!rows.length){body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3)">No schedule — check loan term and start date.</div>';kpis.style.display='none';return;}
+  const paidRows=rows.filter(r=>r.status==='paid');
+  const totalPaid=paidRows.reduce((s,r)=>s+(r.paidAmount||r.payment),0);
+  const paidInt=paidRows.reduce((s,r)=>s+r.interest,0);
+  const totalInt=rows.reduce((s,r)=>s+r.interest,0);
+  const nxt=rows.find(r=>r.status==='pending');
+  kpis.style.display='grid';
+  kpis.innerHTML=`
+    <div class="k"><div class="kl">Total Paid</div><div class="kv" style="color:var(--green2)">${$c(totalPaid)}</div></div>
+    <div class="k"><div class="kl">Interest Paid</div><div class="kv" style="color:var(--amber)">${$c(paidInt)}</div></div>
+    <div class="k"><div class="kl">Total Interest</div><div class="kv">${$c(totalInt)}</div></div>
+    <div class="k"><div class="kl">Payments</div><div class="kv">${paidRows.length}/${rows.length}</div></div>
+    <div class="k"><div class="kl">Balance</div><div class="kv">${$c(loanBal(loan))}</div></div>
+    <div class="k"><div class="kl">${loan.ptype==='accrual'?'Total Accrued':'Next Due'}</div><div class="kv" style="font-size:.8rem">${loan.ptype==='accrual'?$c(totalInt):nxt?fdt(nxt.dueDate):'Complete'}</div></div>`;
+  const rows2=buildSchedRows(loan,sf2);
+  body.innerHTML=rows2||'<div style="text-align:center;padding:30px;color:var(--text3)">No payments match filter.</div>';
 }
 
 // ═══════════════════════════════════════════════
