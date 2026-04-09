@@ -933,19 +933,37 @@ function buildSchedule(loan){
 
     let principal=0,payment=0;
     if(loan.ptype==='accrual'){
+      // Accrual always capitalizes regardless of status
       balance=curBal+totalInterest; payment=0; principal=0;
     } else if(loan.ptype==='interest_only'){
       payment=totalInterest; principal=0;
-      // balance unchanged — stays at curBal (events already applied above)
+      if(rec.status==='missed'){
+        // Unpaid interest capitalizes into balance for subsequent periods
+        balance=curBal+totalInterest;
+      } else {
+        // Paid (or pending/future) — balance stays flat, interest collected
+        balance=curBal;
+      }
     } else if(loan.ptype==='blended'){
       payment=blendedPMT; principal=Math.max(0,payment-totalInterest);
       if(i===n-1)principal=curBal;
-      balance=Math.max(0,curBal-principal);
+      if(rec.status==='missed'){
+        // Nothing paid — full interest capitalizes, no principal reduction
+        balance=curBal+totalInterest;
+      } else {
+        balance=Math.max(0,curBal-principal);
+      }
     } else if(loan.ptype==='partial_accrual'){
       payment=totalInterest*0.5; const cap=totalInterest-payment;
-      balance=curBal+cap; principal=0;
+      if(rec.status==='missed'){
+        balance=curBal+totalInterest; // all capitalizes when missed
+      } else {
+        balance=curBal+cap;
+      }
+      principal=0;
     } else {
-      payment=totalInterest; principal=0; balance=curBal;
+      payment=totalInterest; principal=0;
+      balance=rec.status==='missed'?curBal+totalInterest:curBal;
     }
 
     const row={
@@ -977,11 +995,21 @@ function buildSchedule(loan){
 }
 
 function loanBal(loan){
-  const{rows}=buildSchedule(loan);
-  const lastPaid=[...rows].reverse().find(r=>r.status==='paid');
-  if(lastPaid)return lastPaid.balance;
-  // No payments yet — return balance from last row (includes accrual/draws)
-  return rows.length?rows[rows.length-1].openingBal:(loan.amount||0);
+  const{rows}=buildSchedule(loan); const td=today();
+  if(!rows.length) return loan.amount||0;
+  // Walk rows in sequence — balance flows through paid/missed rows.
+  // Stop at first future-pending row and return the balance at that point.
+  let bal=rows[0].openingBal;
+  for(const r of rows){
+    if(r.status==='paid'||r.status==='missed'){
+      bal=r.balance; // use the post-processing balance (missed capitalizes, paid reduces)
+    } else {
+      // pending row — if overdue, stay at its opening balance; if future, stop
+      if(r.dueDate<td) bal=r.openingBal; // overdue but unpaid — opening balance is current
+      break;
+    }
+  }
+  return bal;
 }
 function loanStatus(loan){
   if(loan.status==='closed')return'closed';
